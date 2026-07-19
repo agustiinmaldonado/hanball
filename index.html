@@ -524,7 +524,19 @@
       .control-bar { padding: 4px; gap: 4px; }
       .btn-main { font-size: 10px; padding: 6px 2px; letter-spacing: 0; flex: 1; text-align: center; }
     }
+
+    /* ── Viewer Mode ── */
+    body.viewer-mode .btn,
+    body.viewer-mode .control-bar,
+    body.viewer-mode .score-controls,
+    body.viewer-mode .penalty-rows button { display: none !important; }
+    body.viewer-mode .team-name-input,
+    body.viewer-mode .tournament-name,
+    body.viewer-mode .penalty-num { pointer-events: none; border-bottom: none; }
+    body.viewer-mode .team-logo { pointer-events: none; }
+    body.viewer-mode .status-msg { margin-bottom: 20px; font-size: 16px; }
   </style>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
 
@@ -562,7 +574,7 @@
         <div class="penalty-label">PENA</div>
         <div class="penalty-rows" id="penaltiesLeft"></div>
         <div style="display:flex;justify-content:center;margin-top:5px;">
-          <button class="btn btn-red btn-sm" style="font-size:10px;padding:2px 8px;" onclick="addPenalty('left')">+ PENAL</button>
+          <button class="btn btn-red btn-sm" style="font-size:10px;padding:2px 8px;" onclick="addPenalty('left')">+ PENA</button>
         </div>
       </div>
     </div>
@@ -644,7 +656,7 @@
         <div class="penalty-label">PENA</div>
         <div class="penalty-rows" id="penaltiesRight"></div>
         <div style="display:flex;justify-content:center;margin-top:5px;">
-          <button class="btn btn-red btn-sm" style="font-size:10px;padding:2px 8px;" onclick="addPenalty('right')">+ PENAL</button>
+          <button class="btn btn-red btn-sm" style="font-size:10px;padding:2px 8px;" onclick="addPenalty('right')">+ PENA</button>
         </div>
       </div>
     </div>
@@ -652,9 +664,10 @@
 
   <!-- Control Bar -->
   <div class="panel control-bar">
-    <button class="btn btn-main btn-green" onclick="startGame()">⚡ NUEVO PARTIDO</button>
-    <button class="btn btn-main" onclick="openTimerModal()">⏱ TIEMPO</button>
-    <button class="btn btn-main btn-red" onclick="confirmReset()">🔄 REINICIAR</button>
+    <button class="btn btn-main btn-green" onclick="startGame()">NUEVO PARTIDO</button>
+    <button class="btn btn-main" onclick="openTimerModal()">TIEMPO</button>
+    <button class="btn btn-main btn-red" onclick="confirmReset()">REINICIAR</button>
+    <button class="btn btn-main" style="background:#0055ff; border-color:#00aaff; color:#fff; text-shadow:none; flex:0.7;" onclick="initAdminNetwork()">📡 COMPARTIR</button>
   </div>
 </div>
 
@@ -744,6 +757,25 @@
     <div class="modal-actions" style="margin-top:10px; width:100%;">
       <button class="btn btn-main btn-green" onclick="openLogoPickerFromViewer()" style="flex:1;">CAMBIAR LOGO</button>
       <button class="btn btn-main btn-red" onclick="closeModal('viewerModal')" style="flex:1;">✖ CERRAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Compartir -->
+<div class="modal-overlay" id="shareModal" onclick="if(event.target===this) closeModal('shareModal')">
+  <div class="modal" style="max-width:320px; gap:14px; text-align:center;">
+    <h3>📡 TRANSMITIR EN VIVO</h3>
+    <div id="shareStatus" style="font-size:12px; color:var(--led-orange);">Conectando al servidor...</div>
+    <div class="logo-url-row" style="margin-top:10px;">
+      <input type="text" id="shareLinkInput" readonly style="font-size:11px; user-select:all; cursor:copy;" onclick="this.select()" />
+      <button class="btn btn-sm btn-green" onclick="copyShareLink()">COPIAR</button>
+    </div>
+    <div style="font-size:11px; color:#aaa; line-height:1.4;">
+      Pasale este link a quien quieras. Podrán ver el marcador en tiempo real desde sus dispositivos.
+      <br><br><span style="color:#ff5555;">Importante:</span> Esta página debe mantenerse abierta para transmitir.
+    </div>
+    <div class="modal-actions" style="margin-top:10px;">
+      <button class="btn btn-main btn-red" onclick="closeModal('shareModal')">✖ CERRAR</button>
     </div>
   </div>
 </div>
@@ -1100,6 +1132,107 @@
 
   /* ── Init ── */
   renderTimer();
+
+  /* ── Networking (PeerJS) ── */
+  let peer = null;
+  let connections = [];
+  const urlParams = new URLSearchParams(window.location.search);
+  const watchId = urlParams.get('watch');
+  const isViewer = !!watchId;
+
+  if (isViewer) {
+    document.body.classList.add('viewer-mode');
+    setStatus('ESPECTADOR - CONECTANDO...');
+    initViewer(watchId);
+  }
+
+  function initAdminNetwork() {
+    if (peer) {
+      openModal('shareModal');
+      return;
+    }
+    openModal('shareModal');
+    document.getElementById('shareStatus').textContent = 'Conectando al servidor...';
+    
+    peer = new Peer();
+    
+    peer.on('open', (id) => {
+      document.getElementById('shareStatus').textContent = '¡Listo! Transmitiendo en vivo.';
+      document.getElementById('shareStatus').style.color = '#00cc44';
+      
+      const baseUrl = window.location.href.split('?')[0];
+      const shareUrl = `${baseUrl}?watch=${id}`;
+      document.getElementById('shareLinkInput').value = shareUrl;
+      
+      setInterval(broadcastState, 1000);
+    });
+
+    peer.on('connection', (conn) => {
+      connections.push(conn);
+      conn.on('open', () => broadcastState());
+      conn.on('close', () => { connections = connections.filter(c => c !== conn); });
+    });
+    
+    peer.on('error', (err) => {
+      document.getElementById('shareStatus').textContent = 'Error de red. Intenta nuevamente.';
+      document.getElementById('shareStatus').style.color = 'var(--led-red)';
+    });
+  }
+
+  function copyShareLink() {
+    const input = document.getElementById('shareLinkInput');
+    input.select();
+    document.execCommand('copy');
+    setStatus('LINK COPIADO');
+  }
+
+  function broadcastState() {
+    if (isViewer || connections.length === 0) return;
+    const payload = {
+      state: state,
+      tournamentName: document.getElementById('tournamentName').value,
+      teamNameLeft: document.getElementById('teamNameLeft').value,
+      teamNameRight: document.getElementById('teamNameRight').value,
+      logoLeftHtml: document.getElementById('logoLeft').innerHTML,
+      logoRightHtml: document.getElementById('logoRight').innerHTML
+    };
+    connections.forEach(conn => { if (conn.open) conn.send(payload); });
+  }
+
+  document.addEventListener('click', () => { if(!isViewer) setTimeout(broadcastState, 50); });
+  document.addEventListener('keyup', () => { if(!isViewer) setTimeout(broadcastState, 50); });
+
+  function initViewer(watchId) {
+    peer = new Peer();
+    peer.on('open', () => {
+      const conn = peer.connect(watchId);
+      conn.on('open', () => { setStatus('🔴 TRANSMISIÓN EN VIVO'); });
+      conn.on('data', (data) => {
+        Object.assign(state, data.state);
+        document.getElementById('tournamentName').value = data.tournamentName;
+        document.getElementById('teamNameLeft').value = data.teamNameLeft;
+        document.getElementById('teamNameRight').value = data.teamNameRight;
+        document.getElementById('logoLeft').innerHTML = data.logoLeftHtml;
+        document.getElementById('logoRight').innerHTML = data.logoRightHtml;
+        
+        document.getElementById('scoreLeft').textContent = pad2(state.scoreLeft);
+        document.getElementById('scoreRight').textContent = pad2(state.scoreRight);
+        document.getElementById('periodNum').textContent = state.period;
+        document.getElementById('ht1Left').textContent = state.ht1Left;
+        document.getElementById('ht1Right').textContent = state.ht1Right;
+        document.getElementById('ht2Left').textContent = state.ht2Left;
+        document.getElementById('ht2Right').textContent = state.ht2Right;
+        document.getElementById('ht2Block').style.display = state.period >= 2 ? '' : 'none';
+        
+        setArrow(state.arrow);
+        renderTimer();
+        renderPenalties('left');
+        renderPenalties('right');
+      });
+      conn.on('close', () => { setStatus('DESCONECTADO DEL ORIGEN'); });
+    });
+    peer.on('error', () => { setStatus('ERROR DE CONEXIÓN'); });
+  }
 </script>
 </body>
 </html>
