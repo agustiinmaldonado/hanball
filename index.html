@@ -535,10 +535,31 @@
     body.viewer-mode .penalty-num { pointer-events: none; border-bottom: none; }
     body.viewer-mode .team-logo { pointer-events: none; }
     body.viewer-mode .status-msg { margin-bottom: 20px; font-size: 16px; }
+
+    /* ── Login Overlay ── */
+    .login-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(10, 10, 12, 0.98);
+      z-index: 99999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
   </style>
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
+
+<!-- Login Overlay -->
+<div id="loginOverlay" class="login-overlay">
+  <div class="modal" style="max-width:320px; gap:16px; text-align:center;">
+    <h3 style="color:var(--led-red);">🔒 ACCESO RESTRINGIDO</h3>
+    <div style="font-size:12px; color:#aaa; margin-bottom:10px;">
+      Ingrese la clave para administrar el marcador.
+    </div>
+    <input type="password" id="loginPin" style="width:100%; padding:14px; font-size:24px; text-align:center; background:var(--bg-inner); border:2px solid var(--led-yellow); color:var(--led-yellow); font-family:var(--font-mono); border-radius:6px; letter-spacing:12px; outline:none;" placeholder="****" onkeypress="if(event.key==='Enter') checkLogin()" />
+    <div id="loginError" style="color:var(--led-red); font-size:12px; display:none; margin-top:-8px;">Clave incorrecta</div>
+    <button class="btn btn-main btn-green" onclick="checkLogin()" style="width:100%; padding:12px; font-size:14px;">ENTRAR</button>
+  </div>
+</div>
 
 <div class="scoreboard">
 
@@ -1142,8 +1163,22 @@
 
   if (isViewer) {
     document.body.classList.add('viewer-mode');
+    document.getElementById('loginOverlay').style.display = 'none';
     setStatus('ESPECTADOR - CONECTANDO...');
     initViewer(watchId);
+  } else {
+    document.getElementById('loginPin').focus();
+  }
+
+  function checkLogin() {
+    if (document.getElementById('loginPin').value === '1234') {
+      document.getElementById('loginOverlay').style.display = 'none';
+    } else {
+      const err = document.getElementById('loginError');
+      err.style.display = 'block';
+      document.getElementById('loginPin').value = '';
+      setTimeout(() => err.style.display = 'none', 2000);
+    }
   }
 
   function initAdminNetwork() {
