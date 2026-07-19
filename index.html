@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marcador Handball</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤾</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --led-yellow: #FFD700;
+      --led-orange: #FFA500;
+      --led-red: #FF4444;
+      --bg-dark: #0a0a0a;
+      --bg-panel: #111;
+      --bg-inner: #080808;
+      --shadow-led: 0 0 8px #FFD700, 0 0 20px #FFD70066;
+      --shadow-red: 0 0 8px #FF4444, 0 0 20px #FF444466;
+      --font-led: 'Orbitron', monospace;
+      --font-mono: 'Share Tech Mono', monospace;
+    }
+
+    html, body {
+      height: 100%;
+      background: #000;
+      color: var(--led-yellow);
+      font-family: var(--font-led);
+      overflow-x: hidden;
+    }
+
+    .scoreboard {
+      min-height: 100vh;
+      background: radial-gradient(ellipse at center, #1a1a0a 0%, #0a0a00 60%, #000 100%);
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    /* Scanlines */
+    .scoreboard::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 2px,
+        rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px
+      );
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .panel {
+      background: var(--bg-panel);
+      border: 2px solid #333;
+      border-radius: 4px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 6px 16px;
+    }
+
+    .tournament-name {
+      font-size: clamp(13px, 3vw, 26px);
+      font-weight: 900;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      color: var(--led-yellow);
+      text-shadow: var(--shadow-led);
+      background: transparent;
+      border: none;
+      outline: none;
+      flex: 1;
+      text-align: center;
+      font-family: var(--font-led);
+    }
+
+    .logo-badge {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #cc0000, #ff6600);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      border: 2px solid var(--led-yellow);
+      box-shadow: 0 0 6px var(--led-yellow);
+      flex-shrink: 0;
+    }
+
+    /* ── Main ── */
+    .main-area {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .team-panel { display: flex; flex-direction: column; gap: 5px; }
+
+    .team-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 10px;
+      border-bottom: 2px solid #333;
+    }
+
+    .team-arrow {
+      color: var(--led-orange);
+      font-size: 22px;
+      text-shadow: 0 0 8px var(--led-orange);
+      flex-shrink: 0;
+      transition: opacity 0.3s;
+    }
+
+    .team-name-input {
+      background: transparent; border: none; outline: none;
+      color: var(--led-yellow);
+      font-family: var(--font-led);
+      font-size: clamp(11px, 2.3vw, 20px);
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      text-shadow: var(--shadow-led);
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .team-name-input:focus { border-bottom: 1px solid var(--led-yellow); }
+
+    .team-logo {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      border: 2px solid var(--led-yellow);
+      box-shadow: 0 0 8px var(--led-yellow);
+      flex-shrink: 0;
+      background: #222;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 8px; color: #555;
+      overflow: hidden; cursor: pointer;
+    }
+
+    /* ── Score ── */
+    .score-block {
+      padding: 8px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+
+    .score-display {
+      background: var(--bg-inner);
+      border: 2px solid #444; border-radius: 4px;
+      padding: 10px 20px; width: 100%; text-align: center;
+    }
+
+    .score-number {
+      font-size: clamp(52px, 10vw, 104px);
+      font-weight: 900;
+      color: var(--led-yellow);
+      text-shadow: var(--shadow-led);
+      line-height: 1;
+      font-family: var(--font-led);
+      letter-spacing: 4px;
+      display: block;
+      transition: color 0.2s, text-shadow 0.2s;
+    }
+
+    .score-controls { display: flex; gap: 8px; justify-content: center; }
+
+    .btn {
+      background: #1a1a00;
+      border: 2px solid var(--led-yellow);
+      color: var(--led-yellow);
+      font-family: var(--font-led);
+      font-weight: 700;
+      font-size: 14px;
+      padding: 5px 14px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.1s;
+      text-shadow: var(--shadow-led);
+      box-shadow: 0 0 4px #FFD70033;
+    }
+
+    .btn:hover { background: #2a2a00; box-shadow: var(--shadow-led); transform: scale(1.05); }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-red {
+      border-color: var(--led-red); color: var(--led-red);
+      background: #1a0000; text-shadow: var(--shadow-red);
+      box-shadow: 0 0 4px #FF444433;
+    }
+    .btn-red:hover { background: #2a0000; box-shadow: var(--shadow-red); }
+
+    .btn-sm { font-size: 11px; padding: 3px 10px; }
+
+    .btn-green {
+      border-color: #00cc44; color: #00cc44;
+      background: #001a0a; text-shadow: 0 0 8px #00cc44;
+    }
+    .btn-green:hover { background: #002a10; box-shadow: 0 0 12px #00cc44; }
+
+    .btn-orange {
+      border-color: var(--led-orange); color: var(--led-orange);
+      background: #1a0a00; text-shadow: 0 0 8px var(--led-orange);
+    }
+    .btn-orange:hover { background: #2a1000; box-shadow: 0 0 12px var(--led-orange); }
+
+    /* ── Penalties ── */
+    .penalty-section {
+      padding: 6px 8px;
+      background: var(--bg-inner);
+      border: 2px solid #333; border-radius: 4px;
+      margin: 0 5px 5px;
+    }
+
+    .penalty-label {
+      font-size: 9px; letter-spacing: 3px;
+      color: var(--led-red); text-shadow: var(--shadow-red);
+      text-align: center; margin-bottom: 4px; font-weight: 700;
+    }
+
+    .penalty-rows { display: flex; flex-direction: column; gap: 3px; }
+
+    .penalty-row { display: flex; align-items: center; gap: 6px; }
+
+    .penalty-num {
+      font-family: var(--font-mono);
+      font-size: clamp(10px, 1.5vw, 14px);
+      color: var(--led-yellow); text-shadow: 0 0 6px #FFD70099;
+      width: 24px; text-align: center;
+      background: var(--bg-panel); border: 1px solid #333;
+      border-radius: 2px; padding: 1px 2px;
+      cursor: text;
+    }
+
+    .penalty-timer-display {
+      font-family: var(--font-mono);
+      font-size: clamp(11px, 1.5vw, 15px);
+      color: var(--led-yellow); text-shadow: 0 0 6px #FFD70099;
+      background: var(--bg-panel); border: 1px solid #333;
+      border-radius: 2px; padding: 1px 4px;
+      flex: 1; text-align: center;
+      cursor: pointer; min-width: 56px;
+    }
+
+    .penalty-timer-display.running {
+      color: var(--led-red); text-shadow: var(--shadow-red);
+      animation: blink-soft 1s infinite;
+    }
+
+    @keyframes blink-soft {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.55; }
+    }
+
+    /* ── Center Panel ── */
+    .center-panel {
+      width: clamp(170px, 22vw, 250px);
+      display: flex; flex-direction: column; gap: 5px;
+    }
+
+    .timer-block {
+      padding: 8px; text-align: center;
+      background: var(--bg-inner);
+      border: 2px solid #444; border-radius: 4px;
+      flex: 1;
+    }
+
+    .status-msg {
+      font-size: clamp(7px, 1vw, 10px); letter-spacing: 1px;
+      color: var(--led-orange); text-shadow: 0 0 6px #FFA50088;
+      text-align: center; min-height: 14px; font-family: var(--font-mono);
+      margin-bottom: 4px;
+    }
+
+    .timer-display {
+      font-size: clamp(30px, 6vw, 62px);
+      font-weight: 900;
+      color: var(--led-yellow); text-shadow: var(--shadow-led);
+      font-family: var(--font-led); letter-spacing: 4px; line-height: 1;
+    }
+
+    .timer-display.warning {
+      color: var(--led-red); text-shadow: var(--shadow-red);
+      animation: blink-soft 0.5s infinite;
+    }
+
+    .timer-controls {
+      display: flex; gap: 5px; justify-content: center;
+      margin-top: 7px; flex-wrap: wrap;
+    }
+
+    .halftime-block {
+      padding: 5px 8px;
+      background: var(--bg-inner);
+      border: 2px solid #444; border-radius: 4px;
+    }
+
+    .halftime-label {
+      font-size: 8px; letter-spacing: 2px;
+      color: var(--led-yellow); text-shadow: 0 0 4px #FFD70088;
+      text-align: center; margin-bottom: 3px;
+    }
+
+    .halftime-scores {
+      display: flex; justify-content: center; align-items: center; gap: 10px;
+    }
+
+    .halftime-num {
+      font-size: clamp(26px, 4vw, 46px);
+      font-weight: 900; color: var(--led-yellow);
+      text-shadow: var(--shadow-led); font-family: var(--font-led);
+    }
+
+    .halftime-sep { font-size: 22px; color: #555; }
+
+    .period-block {
+      padding: 5px 8px; background: var(--bg-inner);
+      border: 2px solid #444; border-radius: 4px; text-align: center;
+    }
+
+    .period-label {
+      font-size: 8px; letter-spacing: 3px;
+      color: var(--led-yellow); text-shadow: 0 0 4px #FFD70088; margin-bottom: 2px;
+    }
+
+    .period-num {
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 900; color: var(--led-yellow);
+      text-shadow: var(--shadow-led); font-family: var(--font-led); line-height: 1;
+    }
+
+    .period-controls {
+      display: flex; gap: 6px; justify-content: center; margin-top: 5px;
+    }
+
+    /* ── Control Bar ── */
+    .control-bar {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; padding: 6px 12px; border-top: 2px solid #333; flex-wrap: wrap;
+    }
+
+    .btn-main { font-size: 12px; padding: 6px 16px; letter-spacing: 2px; }
+
+    /* ── Modals ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.88); z-index: 200;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: #111; border: 2px solid var(--led-yellow);
+      border-radius: 8px; padding: 24px;
+      box-shadow: 0 0 30px #FFD70066;
+      min-width: 280px; display: flex; flex-direction: column; gap: 14px;
+    }
+
+    .modal h3 {
+      font-size: 14px; letter-spacing: 3px;
+      color: var(--led-yellow); text-shadow: var(--shadow-led); text-align: center;
+    }
+
+    .modal-row {
+      display: flex; align-items: center; gap: 10px; justify-content: center; flex-wrap: wrap;
+    }
+
+    .modal input[type="number"], .modal input[type="text"] {
+      background: var(--bg-inner); border: 1px solid var(--led-yellow);
+      color: var(--led-yellow); font-family: var(--font-led);
+      font-size: 20px; padding: 6px 10px; border-radius: 4px;
+      width: 80px; text-align: center; outline: none;
+    }
+
+    .modal input[type="text"] { width: 200px; font-size: 13px; }
+    .modal input:focus { box-shadow: var(--shadow-led); }
+    .modal-label { font-size: 11px; letter-spacing: 2px; color: #888; text-align: center; }
+    .modal-actions { display: flex; gap: 10px; justify-content: center; }
+
+    /* ── Logo Picker ── */
+    .logo-pick-btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .logo-pick-btn {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 6px;
+      padding: 14px 8px;
+      background: var(--bg-inner);
+      border: 2px solid var(--led-yellow);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+      color: var(--led-yellow);
+      font-family: var(--font-led);
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-shadow: var(--shadow-led);
+      box-shadow: 0 0 6px #FFD70022;
+    }
+
+    .logo-pick-btn:hover {
+      background: #2a2a00;
+      box-shadow: var(--shadow-led);
+      transform: scale(1.04);
+    }
+
+    .logo-pick-btn .pick-icon {
+      font-size: 28px;
+      filter: drop-shadow(0 0 6px var(--led-yellow));
+    }
+
+    .logo-pick-btn.full-width {
+      grid-column: 1 / -1;
+      flex-direction: row;
+      gap: 10px;
+      padding: 10px 14px;
+    }
+
+    .logo-url-row {
+      display: flex; gap: 8px; align-items: center; width: 100%;
+    }
+
+    .logo-url-row input {
+      flex: 1;
+      background: var(--bg-inner);
+      border: 1px solid var(--led-yellow);
+      color: var(--led-yellow);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 4px;
+      outline: none;
+    }
+
+    .logo-url-row input:focus { box-shadow: var(--shadow-led); }
+
+    .logo-preview {
+      width: 70px; height: 70px;
+      border-radius: 50%;
+      border: 2px solid var(--led-yellow);
+      box-shadow: 0 0 10px var(--led-yellow);
+      object-fit: cover;
+      display: none;
+      margin: 0 auto;
+    }
+
+    .logo-preview.visible { display: block; }
+
+    /* ── Confirm Modal ── */
+    .confirm-icon {
+      font-size: 36px;
+      text-align: center;
+      filter: drop-shadow(0 0 10px currentColor);
+    }
+
+    .confirm-msg {
+      font-family: var(--font-led);
+      font-size: 13px;
+      letter-spacing: 1px;
+      color: var(--led-yellow);
+      text-shadow: 0 0 6px #FFD70066;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .confirm-divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, #FFD70044, #FFD700, #FFD70044, transparent);
+      margin: 2px 0;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 680px) {
+      .main-area { grid-template-columns: 1fr; }
+      .center-panel { width: 100%; order: -1; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="scoreboard">
+
+  <!-- Header -->
+  <div class="panel header">
+    <div class="logo-badge">🤾</div>
+    <input id="tournamentName" class="tournament-name" value="NACIONAL 2026" maxlength="30" title="Editar torneo" />
+    <div class="logo-badge" style="background:linear-gradient(135deg,#0044cc,#00aaff);">🏆</div>
+  </div>
+
+  <!-- Main -->
+  <div class="main-area" style="flex:1;">
+
+    <!-- LEFT TEAM -->
+    <div class="team-panel panel">
+      <div class="team-header">
+        <span class="team-arrow" id="arrowLeft" style="opacity:0;">▶</span>
+        <input id="teamNameLeft" class="team-name-input" value="LOCAL" maxlength="12" title="Nombre del equipo" />
+        <div class="team-logo" id="logoLeft" title="Click para cambiar logo">LOGO</div>
+      </div>
+
+      <div class="score-block">
+        <div class="score-display">
+          <span class="score-number" id="scoreLeft">00</span>
+        </div>
+        <div class="score-controls">
+          <button class="btn btn-red btn-sm" onclick="changeScore('left',-1)">− 1</button>
+          <button class="btn btn-sm" onclick="changeScore('left',1)">+ 1</button>
+        </div>
+      </div>
+
+      <div class="penalty-section">
+        <div class="penalty-label">PENA</div>
+        <div class="penalty-rows" id="penaltiesLeft"></div>
+        <div style="display:flex;justify-content:center;margin-top:5px;">
+          <button class="btn btn-red btn-sm" style="font-size:10px;padding:2px 8px;" onclick="addPenalty('left')">+ PENAL</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER -->
+    <div class="center-panel panel">
+
+      <div class="timer-block" style="flex:1;">
+        <div class="status-msg" id="statusMsg">LISTO</div>
+        <div class="timer-display" id="mainTimer">30:00</div>
+        <div class="timer-controls">
+          <button class="btn btn-green btn-sm" id="btnTimerStart" onclick="toggleTimer()">▶ START</button>
+          <button class="btn btn-orange btn-sm" onclick="resetTimer()">↺</button>
+        </div>
+        <div class="timer-controls" style="margin-top:4px;">
+          <button class="btn btn-sm" onclick="openTimerModal()">⏱ SET</button>
+          <button class="btn btn-sm" onclick="addTime(60)">+1'</button>
+          <button class="btn btn-red btn-sm" onclick="addTime(-60)">−1'</button>
+        </div>
+      </div>
+
+      <div class="halftime-block">
+        <div class="halftime-label">1° TIEMPO</div>
+        <div class="halftime-scores">
+          <span class="halftime-num" id="ht1Left">0</span>
+          <span class="halftime-sep">—</span>
+          <span class="halftime-num" id="ht1Right">0</span>
+        </div>
+        <div style="display:flex;justify-content:center;margin-top:4px;">
+          <button class="btn btn-sm" style="font-size:9px;padding:2px 8px;" onclick="saveHalftime()">GUARDAR PARCIAL</button>
+        </div>
+      </div>
+
+      <div class="halftime-block" id="ht2Block" style="display:none;">
+        <div class="halftime-label">2° TIEMPO</div>
+        <div class="halftime-scores">
+          <span class="halftime-num" id="ht2Left">0</span>
+          <span class="halftime-sep">—</span>
+          <span class="halftime-num" id="ht2Right">0</span>
+        </div>
+      </div>
+
+      <div class="period-block">
+        <div class="period-label">PERÍODO</div>
+        <div class="period-num" id="periodNum">1</div>
+        <div class="period-controls">
+          <button class="btn btn-sm btn-red" onclick="changePeriod(-1)">◀</button>
+          <button class="btn btn-sm btn-green" onclick="changePeriod(1)">▶</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:4px;padding:4px 6px;">
+        <button class="btn btn-sm" style="flex:1;font-size:9px;" onclick="setArrow('left')">◀ LOCAL</button>
+        <button class="btn btn-sm" style="flex:1;font-size:9px;" onclick="setArrow('none')">— —</button>
+        <button class="btn btn-sm" style="flex:1;font-size:9px;" onclick="setArrow('right')">VISIT ▶</button>
+      </div>
+    </div>
+
+    <!-- RIGHT TEAM -->
+    <div class="team-panel panel">
+      <div class="team-header" style="flex-direction:row-reverse;">
+        <span class="team-arrow" id="arrowRight" style="opacity:0;">◀</span>
+        <input id="teamNameRight" class="team-name-input" value="VISITANTE" maxlength="12"
+          title="Nombre del equipo" style="text-align:right;" />
+        <div class="team-logo" id="logoRight" title="Click para cambiar logo">LOGO</div>
+      </div>
+
+      <div class="score-block">
+        <div class="score-display">
+          <span class="score-number" id="scoreRight">00</span>
+        </div>
+        <div class="score-controls">
+          <button class="btn btn-red btn-sm" onclick="changeScore('right',-1)">− 1</button>
+          <button class="btn btn-sm" onclick="changeScore('right',1)">+ 1</button>
+        </div>
+      </div>
+
+      <div class="penalty-section">
+        <div class="penalty-label">PENA</div>
+        <div class="penalty-rows" id="penaltiesRight"></div>
+        <div style="display:flex;justify-content:center;margin-top:5px;">
+          <button class="btn btn-red btn-sm" style="font-size:10px;padding:2px 8px;" onclick="addPenalty('right')">+ PENAL</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Control Bar -->
+  <div class="panel control-bar">
+    <button class="btn btn-main btn-green" onclick="startGame()">⚡ NUEVO PARTIDO</button>
+    <button class="btn btn-main" onclick="openTimerModal()">⏱ TIEMPO</button>
+    <button class="btn btn-main btn-red" onclick="confirmReset()">🔄 REINICIAR</button>
+  </div>
+</div>
+
+<!-- Modal: Timer -->
+<div class="modal-overlay" id="timerModal">
+  <div class="modal">
+    <h3>CONFIGURAR TIEMPO</h3>
+    <div class="modal-row">
+      <div><div class="modal-label">MIN</div><input type="number" id="setMin" min="0" max="99" value="30" /></div>
+      <span style="font-size:24px;color:var(--led-yellow);">:</span>
+      <div><div class="modal-label">SEG</div><input type="number" id="setSec" min="0" max="59" value="0" /></div>
+    </div>
+    <div class="modal-row" style="gap:6px;">
+      <button class="btn btn-sm" onclick="quickTime(20)">20 min</button>
+      <button class="btn btn-sm" onclick="quickTime(25)">25 min</button>
+      <button class="btn btn-sm" onclick="quickTime(30)">30 min</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-green" onclick="applyTimer()">✔ APLICAR</button>
+      <button class="btn btn-red" onclick="closeModal('timerModal')">✖ CANCELAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Confirm -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal" style="max-width:340px;gap:12px;position:relative;overflow:hidden;">
+    <!-- glow corners -->
+    <div style="position:absolute;top:-1px;left:-1px;width:18px;height:18px;border-top:2px solid var(--led-yellow);border-left:2px solid var(--led-yellow);border-radius:6px 0 0 0;"></div>
+    <div style="position:absolute;top:-1px;right:-1px;width:18px;height:18px;border-top:2px solid var(--led-yellow);border-right:2px solid var(--led-yellow);border-radius:0 6px 0 0;"></div>
+    <div style="position:absolute;bottom:-1px;left:-1px;width:18px;height:18px;border-bottom:2px solid var(--led-yellow);border-left:2px solid var(--led-yellow);border-radius:0 0 0 6px;"></div>
+    <div style="position:absolute;bottom:-1px;right:-1px;width:18px;height:18px;border-bottom:2px solid var(--led-yellow);border-right:2px solid var(--led-yellow);border-radius:0 0 6px 0;"></div>
+
+    <div class="confirm-icon" id="confirmIcon">⚠️</div>
+    <div class="confirm-divider"></div>
+    <div class="confirm-msg" id="confirmMsg">¿Estás seguro?</div>
+    <div class="confirm-divider"></div>
+    <div class="modal-actions">
+      <button class="btn btn-green" id="confirmOk" style="letter-spacing:2px;min-width:90px;">✔ SÍ</button>
+      <button class="btn btn-red" onclick="closeModal('confirmModal')" style="letter-spacing:2px;min-width:90px;">✖ NO</button>
+    </div>
+  </div>
+</div>
+
+<!-- hidden file inputs -->
+<input type="file" id="fileInputCamera" accept="image/*" capture="environment" style="display:none" />
+<input type="file" id="fileInputGallery" accept="image/*" style="display:none" />
+
+<!-- Modal: Logo -->
+<div class="modal-overlay" id="logoModal">
+  <div class="modal" style="max-width:360px;gap:14px;">
+    <h3>CARGAR LOGO</h3>
+
+    <!-- Preview -->
+    <img id="logoPreview" class="logo-preview" src="" alt="preview" />
+
+    <!-- Pick buttons -->
+    <div class="logo-pick-btns">
+
+      <button class="logo-pick-btn" onclick="triggerCamera()">
+        CÁMARA
+      </button>
+
+      <button class="logo-pick-btn" onclick="triggerGallery()">
+        ARCHIVO
+      </button>
+
+      <div class="logo-pick-btn full-width" style="cursor:default;border-style:dashed;">
+        <div class="logo-url-row">
+          <input type="text" id="logoUrlInput" placeholder="https://..." oninput="previewUrl(this.value)" />
+          <button class="btn btn-sm" onclick="applyLogoUrl()" style="white-space:nowrap;">OK</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-red" onclick="cancelLogoModal()">✖ CANCELAR</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ── State ── */
+  const state = {
+    scoreLeft: 0, scoreRight: 0,
+    period: 1, periodMinutes: 30,
+    timerRunning: false, timerSeconds: 30 * 60,
+    ht1Left: 0, ht1Right: 0, ht2Left: 0, ht2Right: 0,
+    penalties: { left: [], right: [] },
+    arrow: 'none',
+    currentLogoTarget: null,
+  };
+
+  let timerInterval = null;
+
+  /* ── Score ── */
+  function changeScore(side, delta) {
+    const key = side === 'left' ? 'scoreLeft' : 'scoreRight';
+    state[key] = Math.max(0, state[key] + delta);
+    const el = document.getElementById(key);
+    el.textContent = pad2(state[key]);
+    el.style.color = '#fff';
+    el.style.textShadow = '0 0 20px #fff, 0 0 40px #FFD700';
+    setTimeout(() => { el.style.color = ''; el.style.textShadow = ''; }, 280);
+  }
+
+  /* ── Timer ── */
+  function toggleTimer() {
+    state.timerRunning ? pauseTimer() : startTimer();
+  }
+
+  function startTimer() {
+    if (state.timerSeconds <= 0) return;
+    state.timerRunning = true;
+    const btn = document.getElementById('btnTimerStart');
+    btn.textContent = '⏸ PAUSE';
+    btn.classList.remove('btn-green'); btn.classList.add('btn-red');
+    setStatus('JUGANDO');
+    timerInterval = setInterval(() => {
+      if (state.timerSeconds > 0) {
+        state.timerSeconds--;
+        renderTimer();
+        tickPenalties('left');
+        tickPenalties('right');
+      } else {
+        endPeriodTime();
+      }
+    }, 1000);
+  }
+
+  function pauseTimer() {
+    state.timerRunning = false;
+    clearInterval(timerInterval); timerInterval = null;
+    const btn = document.getElementById('btnTimerStart');
+    btn.textContent = '▶ START';
+    btn.classList.add('btn-green'); btn.classList.remove('btn-red');
+    setStatus('PAUSADO');
+  }
+
+  function resetTimer() {
+    pauseTimer();
+    state.timerSeconds = state.periodMinutes * 60;
+    renderTimer();
+    document.getElementById('mainTimer').classList.remove('warning');
+    setStatus('LISTO');
+  }
+
+  function endPeriodTime() {
+    pauseTimer();
+    state.timerSeconds = 0;
+    renderTimer();
+    setStatus('SE ACABÓ EL TIEMPO');
+    const el = document.getElementById('mainTimer');
+    el.classList.add('warning');
+    setTimeout(() => el.classList.remove('warning'), 6000);
+  }
+
+  function renderTimer() {
+    const m = Math.floor(state.timerSeconds / 60);
+    const s = state.timerSeconds % 60;
+    document.getElementById('mainTimer').textContent = `${pad2(m)}:${pad2(s)}`;
+    const el = document.getElementById('mainTimer');
+    if (state.timerSeconds <= 60 && state.timerRunning) el.classList.add('warning');
+    else el.classList.remove('warning');
+  }
+
+  function addTime(sec) {
+    state.timerSeconds = Math.max(0, Math.min(state.timerSeconds + sec, 5999));
+    renderTimer();
+  }
+
+  function openTimerModal() {
+    document.getElementById('setMin').value = state.periodMinutes;
+    document.getElementById('setSec').value = 0;
+    openModal('timerModal');
+  }
+
+  function quickTime(min) { document.getElementById('setMin').value = min; document.getElementById('setSec').value = 0; }
+
+  function applyTimer() {
+    const m = parseInt(document.getElementById('setMin').value) || 0;
+    const s = parseInt(document.getElementById('setSec').value) || 0;
+    state.periodMinutes = m;
+    state.timerSeconds = m * 60 + s;
+    renderTimer();
+    closeModal('timerModal');
+    setStatus('LISTO');
+  }
+
+  /* ── Period ── */
+  function changePeriod(delta) {
+    state.period = Math.max(1, Math.min(state.period + delta, 9));
+    document.getElementById('periodNum').textContent = state.period;
+    if (state.period >= 2) document.getElementById('ht2Block').style.display = '';
+    resetTimer();
+  }
+
+  /* ── Halftime ── */
+  function saveHalftime() {
+    if (state.period === 1) {
+      state.ht1Left = state.scoreLeft; state.ht1Right = state.scoreRight;
+      document.getElementById('ht1Left').textContent = state.ht1Left;
+      document.getElementById('ht1Right').textContent = state.ht1Right;
+      setStatus('PARCIAL 1° GUARDADO');
+    } else {
+      state.ht2Left = state.scoreLeft; state.ht2Right = state.scoreRight;
+      document.getElementById('ht2Left').textContent = state.ht2Left;
+      document.getElementById('ht2Right').textContent = state.ht2Right;
+      document.getElementById('ht2Block').style.display = '';
+      setStatus('PARCIAL 2° GUARDADO');
+    }
+  }
+
+  /* ── Arrow ── */
+  function setArrow(side) {
+    state.arrow = side;
+    document.getElementById('arrowLeft').style.opacity = side === 'left' ? '1' : '0';
+    document.getElementById('arrowRight').style.opacity = side === 'right' ? '1' : '0';
+  }
+
+  /* ── Penalties ── */
+  function addPenalty(side) {
+    state.penalties[side].push({ id: Date.now(), seconds: 120, running: false, player: '??' });
+    renderPenalties(side);
+  }
+
+  function removePenalty(side, id) {
+    state.penalties[side] = state.penalties[side].filter(p => p.id !== id);
+    renderPenalties(side);
+  }
+
+  function togglePenaltyTimer(side, id) {
+    const pen = state.penalties[side].find(p => p.id === id);
+    if (pen) { pen.running = !pen.running; renderPenalties(side); }
+  }
+
+  function tickPenalties(side) {
+    let changed = false;
+    state.penalties[side].forEach(pen => {
+      if (pen.running && pen.seconds > 0) {
+        pen.seconds--; changed = true;
+        if (pen.seconds === 0) {
+          pen.running = false;
+          setTimeout(() => removePenalty(side, pen.id), 3000);
+        }
+      }
+    });
+    if (changed) renderPenalties(side);
+  }
+
+  function renderPenalties(side) {
+    const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+    const container = document.getElementById('penalties' + cap(side));
+    container.innerHTML = '';
+    state.penalties[side].forEach(pen => {
+      const m = Math.floor(pen.seconds / 60), s = pen.seconds % 60;
+      const row = document.createElement('div');
+      row.className = 'penalty-row';
+      row.innerHTML = `
+        <span class="penalty-num" contenteditable="true"
+          onblur="updatePlayer('${side}',${pen.id},this.textContent.trim())"
+          title="Número jugador">${pen.player}</span>
+        <span class="penalty-timer-display ${pen.running ? 'running' : ''}"
+          onclick="togglePenaltyTimer('${side}',${pen.id})"
+          title="Click iniciar/pausar">${pad2(m)}:${pad2(s)}</span>
+        <button class="btn btn-red btn-sm" style="padding:1px 5px;font-size:11px;"
+          onclick="removePenalty('${side}',${pen.id})">✖</button>`;
+      container.appendChild(row);
+    });
+  }
+
+  function updatePlayer(side, id, val) {
+    const pen = state.penalties[side].find(p => p.id === id);
+    if (pen) pen.player = val || '??';
+  }
+
+  /* ── Logo ── */
+  document.getElementById('logoLeft').addEventListener('click', () => { state.currentLogoTarget = 'logoLeft'; resetLogoModal(); openModal('logoModal'); });
+  document.getElementById('logoRight').addEventListener('click', () => { state.currentLogoTarget = 'logoRight'; resetLogoModal(); openModal('logoModal'); });
+
+  function resetLogoModal() {
+    document.getElementById('logoUrlInput').value = '';
+    const prev = document.getElementById('logoPreview');
+    prev.src = ''; prev.classList.remove('visible');
+  }
+
+  function setLogoImage(src) {
+    if (!state.currentLogoTarget || !src) return;
+    const el = document.getElementById(state.currentLogoTarget);
+    el.innerHTML = `<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent='ERR'" />`;
+    closeModal('logoModal');
+    setStatus('LOGO ACTUALIZADO');
+  }
+
+  function triggerCamera() {
+    document.getElementById('fileInputCamera').click();
+  }
+
+  function triggerGallery() {
+    document.getElementById('fileInputGallery').click();
+  }
+
+  function handleFileInput(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const src = e.target.result;
+      const prev = document.getElementById('logoPreview');
+      prev.src = src;
+      prev.classList.add('visible');
+      // auto-apply after short preview
+      setTimeout(() => setLogoImage(src), 600);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  document.getElementById('fileInputCamera').addEventListener('change', e => handleFileInput(e.target.files[0]));
+  document.getElementById('fileInputGallery').addEventListener('change', e => handleFileInput(e.target.files[0]));
+
+  function previewUrl(url) {
+    const prev = document.getElementById('logoPreview');
+    if (url.startsWith('http')) {
+      prev.src = url;
+      prev.classList.add('visible');
+    } else {
+      prev.classList.remove('visible');
+    }
+  }
+
+  function applyLogoUrl() {
+    const url = document.getElementById('logoUrlInput').value.trim();
+    if (url) setLogoImage(url);
+  }
+
+  function cancelLogoModal() {
+    document.getElementById('fileInputCamera').value = '';
+    document.getElementById('fileInputGallery').value = '';
+    closeModal('logoModal');
+  }
+
+  function applyLogo() {
+    const url = document.getElementById('logoUrlInput').value.trim();
+    if (url && state.currentLogoTarget) {
+      const el = document.getElementById(state.currentLogoTarget);
+      el.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent='ERR'" />`;
+    }
+    closeModal('logoModal');
+  }
+
+  /* ── Custom Confirm ── */
+  function showConfirm(msg, onOk) {
+    document.getElementById('confirmMsg').textContent = msg;
+    const okBtn = document.getElementById('confirmOk');
+    okBtn.onclick = () => { closeModal('confirmModal'); onOk(); };
+    openModal('confirmModal');
+  }
+
+  /* ── Game ── */
+  function startGame() {
+    showConfirm('¿Iniciar nuevo partido?\nSe resetearán todos los datos.', fullReset);
+  }
+
+  function confirmReset() {
+    showConfirm('¿Resetear todo el marcador?', fullReset);
+  }
+
+  function fullReset() {
+    pauseTimer();
+    Object.assign(state, {
+      scoreLeft:0, scoreRight:0, period:1,
+      timerSeconds: state.periodMinutes * 60,
+      ht1Left:0, ht1Right:0, ht2Left:0, ht2Right:0,
+      penalties: { left:[], right:[] }, arrow:'none'
+    });
+    ['scoreLeft','scoreRight'].forEach(id => document.getElementById(id).textContent = '00');
+    document.getElementById('periodNum').textContent = '1';
+    ['ht1Left','ht1Right'].forEach(id => document.getElementById(id).textContent = '0');
+    document.getElementById('ht2Block').style.display = 'none';
+    document.getElementById('penaltiesLeft').innerHTML = '';
+    document.getElementById('penaltiesRight').innerHTML = '';
+    setArrow('none');
+    renderTimer();
+    setStatus('NUEVO PARTIDO');
+  }
+
+  /* ── Modals ── */
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+  });
+
+  /* ── Status ── */
+  function setStatus(msg) {
+    const el = document.getElementById('statusMsg');
+    el.textContent = msg;
+    el.style.color = 'var(--led-orange)';
+    setTimeout(() => { el.style.color = ''; }, 3500);
+  }
+
+  /* ── Keyboard shortcuts ── */
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.contentEditable === 'true') return;
+    if (e.key === ' ') { e.preventDefault(); toggleTimer(); }
+    else if (e.key === 'ArrowLeft') changeScore('left', 1);
+    else if (e.key === 'ArrowRight') changeScore('right', 1);
+    else if (e.key === 'ArrowDown') { e.preventDefault(); changeScore(e.shiftKey ? 'right' : 'left', -1); }
+  });
+
+  /* ── Helpers ── */
+  function pad2(n) { return String(n).padStart(2, '0'); }
+
+  /* ── Init ── */
+  renderTimer();
+</script>
+</body>
+</html>
