@@ -574,7 +574,7 @@
         <div class="status-msg" id="statusMsg">LISTO</div>
         <div class="timer-display" id="mainTimer">30:00</div>
         <div class="timer-controls">
-          <button class="btn btn-green btn-sm" id="btnTimerStart" onclick="toggleTimer()">▶ START</button>
+          <button class="btn btn-green btn-sm" id="btnTimerStart" onclick="toggleTimer()">▶ INICIAR</button>
           <button class="btn btn-orange btn-sm" onclick="resetTimer()">↺</button>
         </div>
         <div class="timer-controls" style="margin-top:4px;">
@@ -737,6 +737,17 @@
   </div>
 </div>
 
+<!-- Modal: Logo Viewer -->
+<div class="modal-overlay" id="viewerModal" onclick="if(event.target===this) closeModal('viewerModal')">
+  <div class="modal" style="max-width:90vw; background:transparent; border:none; box-shadow:none; align-items:center;">
+    <img id="viewerImage" src="" style="max-width:100%; max-height:70vh; border-radius:12px; border:2px solid var(--led-yellow); box-shadow:0 0 30px #FFD70088; object-fit:contain;" />
+    <div class="modal-actions" style="margin-top:10px; width:100%;">
+      <button class="btn btn-main btn-green" onclick="openLogoPickerFromViewer()" style="flex:1;">CAMBIAR LOGO</button>
+      <button class="btn btn-main btn-red" onclick="closeModal('viewerModal')" style="flex:1;">✖ CERRAR</button>
+    </div>
+  </div>
+</div>
+
 <script>
   /* ── State ── */
   const state = {
@@ -771,7 +782,7 @@
     if (state.timerSeconds <= 0) return;
     state.timerRunning = true;
     const btn = document.getElementById('btnTimerStart');
-    btn.textContent = '⏸ PAUSE';
+    btn.textContent = '⏸ PAUSAR';
     btn.classList.remove('btn-green'); btn.classList.add('btn-red');
     setStatus('JUGANDO');
     timerInterval = setInterval(() => {
@@ -790,7 +801,7 @@
     state.timerRunning = false;
     clearInterval(timerInterval); timerInterval = null;
     const btn = document.getElementById('btnTimerStart');
-    btn.textContent = '▶ START';
+    btn.textContent = '▶ INICIAR';
     btn.classList.add('btn-green'); btn.classList.remove('btn-red');
     setStatus('PAUSADO');
   }
@@ -933,8 +944,27 @@
   }
 
   /* ── Logo ── */
-  document.getElementById('logoLeft').addEventListener('click', () => { state.currentLogoTarget = 'logoLeft'; resetLogoModal(); openModal('logoModal'); });
-  document.getElementById('logoRight').addEventListener('click', () => { state.currentLogoTarget = 'logoRight'; resetLogoModal(); openModal('logoModal'); });
+  document.getElementById('logoLeft').addEventListener('click', () => handleLogoClick('logoLeft'));
+  document.getElementById('logoRight').addEventListener('click', () => handleLogoClick('logoRight'));
+
+  function handleLogoClick(targetId) {
+    state.currentLogoTarget = targetId;
+    const el = document.getElementById(targetId);
+    const img = el.querySelector('img');
+    if (img && img.src) {
+      document.getElementById('viewerImage').src = img.src;
+      openModal('viewerModal');
+    } else {
+      resetLogoModal();
+      openModal('logoModal');
+    }
+  }
+
+  function openLogoPickerFromViewer() {
+    closeModal('viewerModal');
+    resetLogoModal();
+    openModal('logoModal');
+  }
 
   function resetLogoModal() {
     document.getElementById('logoUrlInput').value = '';
