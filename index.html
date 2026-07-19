@@ -1141,6 +1141,10 @@
     else if (e.key === 'ArrowLeft') changeScore('left', 1);
     else if (e.key === 'ArrowRight') changeScore('right', 1);
     else if (e.key === 'ArrowDown') { e.preventDefault(); changeScore(e.shiftKey ? 'right' : 'left', -1); }
+
+    /* ── Botones de volumen (Android Chrome/Firefox) ── */
+    else if (e.key === 'AudioVolumeUp'   || e.keyCode === 175) { e.preventDefault(); if (!isViewer) changeScore('left',  1); }
+    else if (e.key === 'AudioVolumeDown' || e.keyCode === 174) { e.preventDefault(); if (!isViewer) changeScore('right', 1); }
   });
 
   /* ── Helpers ── */
