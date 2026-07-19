@@ -1,5 +1,5 @@
 /* ── State ── */
-  const state = {
+  let state = {
     scoreLeft: 0, scoreRight: 0,
     period: 1, periodMinutes: 30,
     timerRunning: false, timerSeconds: 30 * 60,
@@ -8,6 +8,18 @@
     arrow: 'none',
     currentLogoTarget: null,
   };
+
+  // --- Audio Context for Alerts ---
+  let audioCtx = null;
+  function initAudio() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    } catch (e) { console.log('Audio error', e); }
+  }
+  // Initialize on first click anywhere
+  document.addEventListener('click', initAudio, { once: true });
+  document.addEventListener('touchstart', initAudio, { once: true });
 
   let timerInterval = null;
 
@@ -170,18 +182,20 @@
   function playPenaltyAlert(side) {
     // Sonido (Beep) usando Web Audio API (no requiere archivos mp3 externos)
     try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+      if (!audioCtx) initAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(audioCtx.destination);
       osc.type = 'square';
-      osc.frequency.setValueAtTime(880, ctx.currentTime); // Nota alta
-      gain.gain.setValueAtTime(0.1, ctx.currentTime); // Volumen suave
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Nota alta
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime); // Volumen suave
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
       osc.start();
-      osc.stop(ctx.currentTime + 0.5);
-    } catch (e) { console.log('Audio no soportado'); }
+      osc.stop(audioCtx.currentTime + 0.5);
+    } catch (e) { console.log('Audio no soportado o bloqueado', e); }
 
     // Alerta visual: Parpadeo verde en el panel del equipo
     const panelId = side === 'left' ? 'teamPanelLeft' : 'teamPanelRight';
