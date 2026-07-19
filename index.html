@@ -551,7 +551,7 @@
 <!-- Login Overlay -->
 <div id="loginOverlay" class="login-overlay">
   <div class="modal" style="max-width:320px; gap:16px; text-align:center;">
-    <h3 style="color:var(--led-red);">🔒 ACCESO RESTRINGIDO</h3>
+    <h3 style="color:var(--led-red);">ACCESO RESTRINGIDO</h3>
     <div style="font-size:12px; color:#aaa; margin-bottom:10px;">
       Ingrese la clave para administrar el marcador.
     </div>
@@ -1171,7 +1171,7 @@
   }
 
   function checkLogin() {
-    if (document.getElementById('loginPin').value === '1234') {
+    if (document.getElementById('loginPin').value === 'ATP2019') {
       document.getElementById('loginOverlay').style.display = 'none';
     } else {
       const err = document.getElementById('loginError');
