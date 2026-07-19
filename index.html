@@ -482,8 +482,47 @@
 
     /* ── Responsive ── */
     @media (max-width: 680px) {
-      .main-area { grid-template-columns: 1fr; }
-      .center-panel { width: 100%; order: -1; }
+      .scoreboard { padding: 4px; gap: 4px; }
+      .header { padding: 4px; gap: 8px; }
+      .tournament-name { font-size: 18px; letter-spacing: 3px; }
+      .logo-badge { width: 26px; height: 26px; font-size: 13px; }
+      
+      .main-area { 
+        grid-template-columns: 1fr 1fr; 
+        grid-template-areas: 
+          "center center"
+          "left right";
+        gap: 4px;
+      }
+      .team-panel:nth-child(1) { grid-area: left; }
+      .center-panel { grid-area: center; }
+      .team-panel:nth-child(3) { grid-area: right; }
+
+      .center-panel { 
+        width: 100%; 
+        flex-direction: row; 
+        flex-wrap: wrap;
+        justify-content: space-around;
+      }
+      
+      .timer-block { flex: 1 1 100%; min-width: 100%; margin-bottom: 2px; }
+      .timer-display { font-size: 48px; }
+      .timer-controls { margin-top: 4px; }
+      .halftime-block, .period-block { flex: 1; padding: 4px; }
+      .halftime-num { font-size: 20px; }
+      .period-num { font-size: 22px; }
+      
+      .score-number { font-size: 50px; }
+      .team-logo { width: 32px; height: 32px; font-size: 7px; }
+      .team-name-input { font-size: 13px; letter-spacing: 1px; }
+      .team-header { padding: 4px; gap: 4px; }
+      .team-arrow { font-size: 16px; }
+      
+      .penalty-num { width: 20px; font-size: 10px; }
+      .penalty-timer-display { min-width: 44px; font-size: 11px; }
+      
+      .control-bar { padding: 4px; gap: 4px; }
+      .btn-main { font-size: 10px; padding: 6px 2px; letter-spacing: 0; flex: 1; text-align: center; }
     }
   </style>
 </head>
