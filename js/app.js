@@ -159,11 +159,35 @@
         pen.seconds--; changed = true;
         if (pen.seconds === 0) {
           pen.running = false;
+          playPenaltyAlert(side);
           setTimeout(() => removePenalty(side, pen.id), 3000);
         }
       }
     });
     if (changed) renderPenalties(side);
+  }
+
+  function playPenaltyAlert(side) {
+    // Sonido (Beep) usando Web Audio API (no requiere archivos mp3 externos)
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(880, ctx.currentTime); // Nota alta
+      gain.gain.setValueAtTime(0.1, ctx.currentTime); // Volumen suave
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+    } catch (e) { console.log('Audio no soportado'); }
+
+    // Alerta visual: Parpadeo verde en el panel del equipo
+    const panelId = side === 'left' ? 'teamPanelLeft' : 'teamPanelRight';
+    const panel = document.getElementById(panelId) || document.body;
+    panel.classList.add('flash-green');
+    setTimeout(() => panel.classList.remove('flash-green'), 1000);
   }
 
   function renderPenalties(side) {
