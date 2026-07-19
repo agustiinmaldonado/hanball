@@ -121,7 +121,16 @@
   function changePeriod(delta) {
     state.period = Math.max(1, Math.min(state.period + delta, 9));
     document.getElementById('periodNum').textContent = state.period;
-    if (state.period >= 2) document.getElementById('ht2Block').style.display = '';
+    if (state.period >= 2) {
+      document.getElementById('ht2Block').style.display = '';
+      // Hide 1st half save button — period 1 is already locked
+      const btn1 = document.getElementById('btnSave1Wrap');
+      if (btn1) btn1.style.display = 'none';
+    } else {
+      // Back to period 1 — show button again
+      const btn1 = document.getElementById('btnSave1Wrap');
+      if (btn1) btn1.style.display = '';
+    }
     resetTimer();
   }
 
