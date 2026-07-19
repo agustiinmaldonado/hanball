@@ -508,7 +508,8 @@
       .penalty-timer-display { min-width: 44px; font-size: 11px; }
       
       .control-bar { padding: 4px; gap: 4px; }
-      .btn-main { font-size: 10px; padding: 6px 2px; letter-spacing: 0; flex: 1; text-align: center; }
+      .btn-main { font-size: 10px; padding: 6px 2px; letter-spacing: 0; flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap; }
+      .hide-mobile { display: none; }
     }
 
     /* ── Viewer Mode ── */
