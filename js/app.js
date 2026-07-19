@@ -573,6 +573,50 @@
     openModal('resultModal');
   }
 
+  // Shared helper: fill an element set with prefix
+  function fillResultCard(prefix) {
+    document.getElementById(prefix + 'Tournament').textContent =
+      document.getElementById('tournamentName').value || 'HANDBALL';
+    document.getElementById(prefix + 'ScoreLeft').textContent = pad2(state.scoreLeft);
+    document.getElementById(prefix + 'ScoreRight').textContent = pad2(state.scoreRight);
+    document.getElementById(prefix + 'NameLeft').textContent =
+      document.getElementById('teamNameLeft').value || 'LOCAL';
+    document.getElementById(prefix + 'NameRight').textContent =
+      document.getElementById('teamNameRight').value || 'VISITANTE';
+    document.getElementById(prefix + 'Period').textContent = `PERÍODO ${state.period}`;
+    const ht2 = state.period >= 2 ? `  |  2T: ${state.ht2Left} - ${state.ht2Right}` : '';
+    document.getElementById(prefix + 'Halftimes').textContent =
+      `1T: ${state.ht1Left} - ${state.ht1Right}${ht2}`;
+
+    ['Left', 'Right'].forEach(side => {
+      const src = document.getElementById('logo' + side);
+      const dst = document.getElementById(prefix + 'Logo' + side);
+      dst.innerHTML = '';
+      if (src && src.querySelector('img')) {
+        const img = src.querySelector('img').cloneNode();
+        img.style.cssText = 'width:100%; height:100%; object-fit:cover;';
+        dst.appendChild(img);
+      } else {
+        dst.textContent = side === 'Left'
+          ? (document.getElementById('teamNameLeft').value || 'L').charAt(0)
+          : (document.getElementById('teamNameRight').value || 'V').charAt(0);
+        dst.style.cssText = 'font-size:22px; font-weight:900; color:var(--led-yellow);';
+      }
+    });
+  }
+
+  function openResultScreen() {
+    closeModal('resultModal');
+    fillResultCard('rs');
+    const screen = document.getElementById('resultScreen');
+    screen.style.display = 'flex';
+  }
+
+  function closeResultScreen() {
+    document.getElementById('resultScreen').style.display = 'none';
+  }
+
+
   function captureAndDownload() {
     const el = document.getElementById('resultCapture');
     const btn = el.closest('.modal').querySelector('button');

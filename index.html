@@ -211,9 +211,69 @@
     </div>
 
     <div class="modal-actions" style="flex-direction:column; gap:8px;">
-      <button class="btn btn-main" style="background:#6600cc; border-color:#aa44ff; color:#fff; text-shadow:none; width:100%;" onclick="captureAndDownload()">DESCARGAR IMAGEN</button>
+      <button class="btn btn-main" style="background:#6600cc; border-color:#aa44ff; color:#fff; text-shadow:none; width:100%;" onclick="openResultScreen()">VER RESULTADO FINAL</button>
       <button class="btn btn-main btn-red" onclick="closeModal('resultModal')" style="width:100%;">✖ CERRAR</button>
     </div>
+  </div>
+</div>
+
+<!-- Fullscreen Result Screen -->
+<div id="resultScreen" style="
+  display:none; position:fixed; inset:0; z-index:99990;
+  background:#000;
+  flex-direction:column; align-items:center; justify-content:center;
+  padding:20px;
+">
+  <!-- Close button -->
+  <button onclick="closeResultScreen()" style="
+    position:absolute; top:16px; right:16px;
+    background:transparent; border:1px solid #444; color:#888;
+    font-family:var(--font-led); font-size:11px; letter-spacing:2px;
+    padding:6px 12px; border-radius:4px; cursor:pointer;
+  ">✖ CERRAR</button>
+
+  <!-- The card -->
+  <div id="resultScreenCard" style="
+    background:linear-gradient(160deg,#0d0d1a 0%,#0a0a0c 55%,#0d0900 100%);
+    border:2px solid var(--led-yellow); border-radius:14px;
+    overflow:hidden; width:100%; max-width:420px;
+  ">
+    <!-- Header -->
+    <div style="background:linear-gradient(90deg,#1a1000,#251600,#1a1000); padding:16px 24px; border-bottom:1px solid #FFD70033; text-align:center;">
+      <div id="rsTournament" style="font-family:var(--font-led); font-size:15px; letter-spacing:4px; color:var(--led-yellow); text-shadow:0 0 12px #FFD70099;"></div>
+    </div>
+    <!-- Teams & Score -->
+    <div style="display:flex; align-items:center; padding:28px 16px; gap:8px;">
+      <!-- Left -->
+      <div style="display:flex; flex-direction:column; align-items:center; gap:10px; flex:1; min-width:0;">
+        <div id="rsLogoLeft" style="width:72px; height:72px; border-radius:50%; background:var(--bg-panel); border:2px solid var(--led-yellow); display:flex; align-items:center; justify-content:center; overflow:hidden;"></div>
+        <div id="rsNameLeft" style="font-family:var(--font-led); font-size:12px; letter-spacing:2px; color:#ccc; text-align:center; word-break:break-word;"></div>
+      </div>
+      <!-- Score -->
+      <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:0 0 auto; padding:0 6px;">
+        <div style="display:flex; gap:8px; align-items:center;">
+          <div id="rsScoreLeft" style="font-family:var(--font-led); font-size:72px; color:var(--led-yellow); text-shadow:0 0 24px #FFD700bb; line-height:1;"></div>
+          <div style="font-family:var(--font-led); font-size:48px; color:#333; line-height:1;">-</div>
+          <div id="rsScoreRight" style="font-family:var(--font-led); font-size:72px; color:var(--led-yellow); text-shadow:0 0 24px #FFD700bb; line-height:1;"></div>
+        </div>
+        <div id="rsPeriod" style="font-family:var(--font-led); font-size:10px; letter-spacing:4px; color:#555;"></div>
+      </div>
+      <!-- Right -->
+      <div style="display:flex; flex-direction:column; align-items:center; gap:10px; flex:1; min-width:0;">
+        <div id="rsLogoRight" style="width:72px; height:72px; border-radius:50%; background:var(--bg-panel); border:2px solid var(--led-yellow); display:flex; align-items:center; justify-content:center; overflow:hidden;"></div>
+        <div id="rsNameRight" style="font-family:var(--font-led); font-size:12px; letter-spacing:2px; color:#ccc; text-align:center; word-break:break-word;"></div>
+      </div>
+    </div>
+    <!-- Footer -->
+    <div style="background:#080806; padding:10px 20px; border-top:1px solid #FFD70022; display:flex; justify-content:space-between; align-items:center;">
+      <div id="rsHalftimes" style="font-family:var(--font-mono); font-size:10px; color:#555; letter-spacing:1px;"></div>
+      <div style="font-family:var(--font-led); font-size:9px; color:#2a2a2a; letter-spacing:2px;">HANDBALL SCOREBOARD</div>
+    </div>
+  </div>
+
+  <!-- Hint -->
+  <div style="margin-top:24px; font-family:var(--font-led); font-size:11px; color:#444; letter-spacing:2px; text-align:center;">
+    SACÁ UNA CAPTURA DE PANTALLA PARA GUARDAR
   </div>
 </div>
 
