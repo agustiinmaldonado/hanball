@@ -164,33 +164,49 @@
 <div class="modal-overlay" id="resultModal" onclick="if(event.target===this) closeModal('resultModal')">
   <div class="modal" style="max-width:380px; gap:12px; text-align:center;">
     <h3 style="color:var(--led-yellow);">RESULTADO FINAL</h3>
-    <div id="resultCapture" style="
-      background:#0a0a0c; border:2px solid var(--led-yellow);
-      border-radius:10px; padding:20px; font-family:var(--font-led);
-      display:flex; flex-direction:column; align-items:center; gap:12px;
-    ">
-      <div id="rcTournament" style="font-size:13px; letter-spacing:3px; color:var(--led-yellow); text-shadow:var(--shadow-yellow);"></div>
-      <div style="display:flex; gap:30px; align-items:center; justify-content:center; width:100%;">
-        <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1;">
-          <div id="rcLogoLeft" style="width:48px; height:48px; border-radius:50%; background:var(--bg-panel); border:2px solid #333; display:flex; align-items:center; justify-content:center; overflow:hidden;"></div>
-          <div id="rcNameLeft" style="font-size:11px; letter-spacing:2px; color:#aaa;"></div>
-        </div>
-        <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-          <div style="display:flex; gap:10px; align-items:center;">
-            <div id="rcScoreLeft" style="font-size:52px; color:var(--led-yellow); text-shadow:var(--shadow-yellow); font-family:var(--font-led);"></div>
-            <div style="font-size:36px; color:#555;">:</div>
-            <div id="rcScoreRight" style="font-size:52px; color:var(--led-yellow); text-shadow:var(--shadow-yellow); font-family:var(--font-led);"></div>
-          </div>
-          <div id="rcPeriod" style="font-size:10px; letter-spacing:3px; color:#888;"></div>
-        </div>
-        <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1;">
-          <div id="rcLogoRight" style="width:48px; height:48px; border-radius:50%; background:var(--bg-panel); border:2px solid #333; display:flex; align-items:center; justify-content:center; overflow:hidden;"></div>
-          <div id="rcNameRight" style="font-size:11px; letter-spacing:2px; color:#aaa;"></div>
-        </div>
+
+    <div id="resultCapture" style="background:linear-gradient(160deg,#0d0d1a 0%,#0a0a0c 55%,#0d0900 100%); border:2px solid var(--led-yellow); border-radius:12px; overflow:hidden; width:100%;">
+
+      <!-- Card Header -->
+      <div style="background:linear-gradient(90deg,#1a1000,#251600,#1a1000); padding:12px 20px; border-bottom:1px solid #FFD70033; text-align:center;">
+        <div id="rcTournament" style="font-family:var(--font-led); font-size:13px; letter-spacing:4px; color:var(--led-yellow); text-shadow:0 0 10px #FFD70088;"></div>
       </div>
-      <div id="rcHalftimes" style="font-size:10px; color:#666; letter-spacing:1px;"></div>
-      <div style="font-size:9px; color:#444; letter-spacing:2px;">HANDBALL SCOREBOARD</div>
+
+      <!-- Teams & Score -->
+      <div style="display:flex; align-items:center; padding:18px 10px; gap:6px;">
+
+        <!-- LEFT TEAM -->
+        <div style="display:flex; flex-direction:column; align-items:center; gap:7px; flex:1; min-width:0;">
+          <div id="rcLogoLeft" style="width:52px; height:52px; border-radius:50%; background:var(--bg-panel); border:2px solid var(--led-yellow); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;"></div>
+          <div id="rcNameLeft" style="font-family:var(--font-led); font-size:10px; letter-spacing:1px; color:#ccc; word-break:break-word; text-align:center; line-height:1.2; max-width:80px;"></div>
+        </div>
+
+        <!-- SCORE -->
+        <div style="display:flex; flex-direction:column; align-items:center; gap:4px; flex:0 0 auto; padding:0 4px;">
+          <div style="display:flex; gap:6px; align-items:center;">
+            <div id="rcScoreLeft" style="font-family:var(--font-led); font-size:54px; color:var(--led-yellow); text-shadow:0 0 18px #FFD700aa; line-height:1;"></div>
+            <div style="font-family:var(--font-led); font-size:36px; color:#444; line-height:1;">-</div>
+            <div id="rcScoreRight" style="font-family:var(--font-led); font-size:54px; color:var(--led-yellow); text-shadow:0 0 18px #FFD700aa; line-height:1;"></div>
+          </div>
+          <div id="rcPeriod" style="font-family:var(--font-led); font-size:9px; letter-spacing:3px; color:#666;"></div>
+        </div>
+
+        <!-- RIGHT TEAM -->
+        <div style="display:flex; flex-direction:column; align-items:center; gap:7px; flex:1; min-width:0;">
+          <div id="rcLogoRight" style="width:52px; height:52px; border-radius:50%; background:var(--bg-panel); border:2px solid var(--led-yellow); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;"></div>
+          <div id="rcNameRight" style="font-family:var(--font-led); font-size:10px; letter-spacing:1px; color:#ccc; word-break:break-word; text-align:center; line-height:1.2; max-width:80px;"></div>
+        </div>
+
+      </div>
+
+      <!-- Card Footer -->
+      <div style="background:#080806; padding:8px 16px; border-top:1px solid #FFD70022; display:flex; justify-content:space-between; align-items:center;">
+        <div id="rcHalftimes" style="font-family:var(--font-mono); font-size:9px; color:#555; letter-spacing:1px;"></div>
+        <div style="font-family:var(--font-led); font-size:8px; color:#2a2a2a; letter-spacing:2px;">HANDBALL SCOREBOARD</div>
+      </div>
+
     </div>
+
     <div class="modal-actions" style="flex-direction:column; gap:8px;">
       <button class="btn btn-main" style="background:#6600cc; border-color:#aa44ff; color:#fff; text-shadow:none; width:100%;" onclick="captureAndDownload()">⬇ DESCARGAR IMAGEN</button>
       <button class="btn btn-main btn-red" onclick="closeModal('resultModal')" style="width:100%;">✖ CERRAR</button>
