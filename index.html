@@ -11,6 +11,7 @@
   <meta name="theme-color" content="#0a0a0c" />
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -154,7 +155,46 @@
     <button class="btn btn-main btn-green" onclick="startGame()">NUEVO<span class="hide-mobile"> PARTIDO</span></button>
     <button class="btn btn-main" onclick="openTimerModal()">TIEMPO</button>
     <button class="btn btn-main btn-red" onclick="confirmReset()">REINICIAR</button>
-    <button class="btn btn-main" style="background:#0055ff; border-color:#00aaff; color:#fff; text-shadow:none; flex:0.7;" onclick="initAdminNetwork()">COMPARTIR</button>
+    <button class="btn btn-main" style="background:#0055ff; border-color:#00aaff; color:#fff; text-shadow:none;" onclick="initAdminNetwork()">COMPARTIR</button>
+    <button class="btn btn-main" style="background:#6600cc; border-color:#aa44ff; color:#fff; text-shadow:none;" onclick="showResultModal()">📸<span class="hide-mobile"> FOTO</span></button>
+  </div>
+</div>
+
+<!-- Modal: Result -->
+<div class="modal-overlay" id="resultModal" onclick="if(event.target===this) closeModal('resultModal')">
+  <div class="modal" style="max-width:380px; gap:12px; text-align:center;">
+    <h3 style="color:var(--led-yellow);">📸 RESULTADO FINAL</h3>
+    <div id="resultCapture" style="
+      background:#0a0a0c; border:2px solid var(--led-yellow);
+      border-radius:10px; padding:20px; font-family:var(--font-led);
+      display:flex; flex-direction:column; align-items:center; gap:12px;
+    ">
+      <div id="rcTournament" style="font-size:13px; letter-spacing:3px; color:var(--led-yellow); text-shadow:var(--shadow-yellow);"></div>
+      <div style="display:flex; gap:30px; align-items:center; justify-content:center; width:100%;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1;">
+          <div id="rcLogoLeft" style="width:48px; height:48px; border-radius:50%; background:var(--bg-panel); border:2px solid #333; display:flex; align-items:center; justify-content:center; overflow:hidden;"></div>
+          <div id="rcNameLeft" style="font-size:11px; letter-spacing:2px; color:#aaa;"></div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div id="rcScoreLeft" style="font-size:52px; color:var(--led-yellow); text-shadow:var(--shadow-yellow); font-family:var(--font-led);"></div>
+            <div style="font-size:36px; color:#555;">:</div>
+            <div id="rcScoreRight" style="font-size:52px; color:var(--led-yellow); text-shadow:var(--shadow-yellow); font-family:var(--font-led);"></div>
+          </div>
+          <div id="rcPeriod" style="font-size:10px; letter-spacing:3px; color:#888;"></div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex:1;">
+          <div id="rcLogoRight" style="width:48px; height:48px; border-radius:50%; background:var(--bg-panel); border:2px solid #333; display:flex; align-items:center; justify-content:center; overflow:hidden;"></div>
+          <div id="rcNameRight" style="font-size:11px; letter-spacing:2px; color:#aaa;"></div>
+        </div>
+      </div>
+      <div id="rcHalftimes" style="font-size:10px; color:#666; letter-spacing:1px;"></div>
+      <div style="font-size:9px; color:#444; letter-spacing:2px;">HANDBALL SCOREBOARD</div>
+    </div>
+    <div class="modal-actions" style="flex-direction:column; gap:8px;">
+      <button class="btn btn-main" style="background:#6600cc; border-color:#aa44ff; color:#fff; text-shadow:none; width:100%;" onclick="captureAndDownload()">⬇ DESCARGAR IMAGEN</button>
+      <button class="btn btn-main btn-red" onclick="closeModal('resultModal')" style="width:100%;">✖ CERRAR</button>
+    </div>
   </div>
 </div>
 

@@ -518,3 +518,81 @@
     });
     peer.on('error', () => { setStatus('ERROR DE CONEXIÓN'); });
   }
+
+  /* ── Result Generator ── */
+  function showResultModal() {
+    // Fill in tournament name
+    document.getElementById('rcTournament').textContent =
+      document.getElementById('tournamentName').value || 'HANDBALL';
+
+    // Fill scores
+    document.getElementById('rcScoreLeft').textContent = pad2(state.scoreLeft);
+    document.getElementById('rcScoreRight').textContent = pad2(state.scoreRight);
+
+    // Team names
+    document.getElementById('rcNameLeft').textContent =
+      document.getElementById('teamNameLeft').value || 'LOCAL';
+    document.getElementById('rcNameRight').textContent =
+      document.getElementById('teamNameRight').value || 'VISITANTE';
+
+    // Period info
+    document.getElementById('rcPeriod').textContent = `PERÍODO ${state.period}`;
+
+    // Halftime scores
+    const ht2 = state.period >= 2
+      ? `  |  2T: ${state.ht2Left} - ${state.ht2Right}` : '';
+    document.getElementById('rcHalftimes').textContent =
+      `1T: ${state.ht1Left} - ${state.ht1Right}${ht2}`;
+
+    // Copy logos
+    ['Left', 'Right'].forEach(side => {
+      const src = document.getElementById('logo' + side);
+      const dst = document.getElementById('rcLogo' + side);
+      dst.innerHTML = '';
+      if (src && src.querySelector('img')) {
+        const img = src.querySelector('img').cloneNode();
+        img.style.cssText = 'width:100%; height:100%; object-fit:cover;';
+        dst.appendChild(img);
+      } else {
+        dst.textContent = side === 'Left'
+          ? (document.getElementById('teamNameLeft').value || 'L').charAt(0)
+          : (document.getElementById('teamNameRight').value || 'V').charAt(0);
+        dst.style.cssText = 'font-size:22px; font-weight:900; color:var(--led-yellow);';
+      }
+    });
+
+    openModal('resultModal');
+  }
+
+  function captureAndDownload() {
+    const el = document.getElementById('resultCapture');
+    const btn = el.closest('.modal').querySelector('button');
+
+    html2canvas(el, {
+      backgroundColor: '#0a0a0c',
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      logging: false
+    }).then(canvas => {
+      const filename = `resultado-handball-${Date.now()}.png`;
+      canvas.toBlob(blob => {
+        // Try Web Share API first (mobile)
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'image/png' })] })) {
+          navigator.share({
+            title: 'Resultado Handball',
+            files: [new File([blob], filename, { type: 'image/png' })]
+          }).catch(() => downloadBlob(canvas, filename));
+        } else {
+          downloadBlob(canvas, filename);
+        }
+      }, 'image/png');
+    });
+  }
+
+  function downloadBlob(canvas, filename) {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }
