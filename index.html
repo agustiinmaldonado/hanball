@@ -253,7 +253,8 @@
       <input type="text" id="shareLinkInput" readonly style="font-size:11px; user-select:all; cursor:copy;" onclick="this.select()" />
       <button class="btn btn-sm btn-green" onclick="copyShareLink()">COPIAR</button>
     </div>
-    <div style="font-size:11px; color:#aaa; line-height:1.4;">
+    <div id="qrcode" style="display:flex; justify-content:center; margin-top:10px; background:#fff; padding:10px; border-radius:8px;"></div>
+    <div style="font-size:11px; color:#aaa; line-height:1.4; margin-top:10px;">
       Pasale este link a quien quieras. Podrán ver el marcador en tiempo real desde sus dispositivos.
       <br><br><span style="color:#ff5555;">Importante:</span> Esta página debe mantenerse abierta para transmitir.
     </div>
@@ -263,6 +264,7 @@
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

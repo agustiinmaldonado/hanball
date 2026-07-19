@@ -399,6 +399,18 @@
       const shareUrl = `${baseUrl}?watch=${id}`;
       document.getElementById('shareLinkInput').value = shareUrl;
       
+      // Generate QR Code
+      const qrContainer = document.getElementById('qrcode');
+      qrContainer.innerHTML = '';
+      new QRCode(qrContainer, {
+        text: shareUrl,
+        width: 160,
+        height: 160,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.L
+      });
+      
       setInterval(broadcastState, 1000);
     });
 
