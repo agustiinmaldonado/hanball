@@ -599,9 +599,53 @@
     });
   }
 
-  function downloadBlob(canvas, filename) {
-    const link = document.createElement('a');
-    link.download = filename;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+  function captureAndDownload() {
+    const el = document.getElementById('resultCapture');
+
+    // Detect mobile
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    html2canvas(el, {
+      backgroundColor: '#0a0a0c',
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      logging: false
+    }).then(canvas => {
+      const dataUrl = canvas.toDataURL('image/png');
+      const filename = `resultado-handball-${Date.now()}.png`;
+
+      if (isMobile) {
+        // Mobile: Try Web Share API (works on Android Chrome and iOS Safari)
+        canvas.toBlob(blob => {
+          const file = new File([blob], filename, { type: 'image/png' });
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({ title: 'Resultado Handball', files: [file] })
+              .catch(() => openImageInNewTab(dataUrl));
+          } else {
+            // Fallback: open image in new tab, user long-presses to save
+            openImageInNewTab(dataUrl);
+          }
+        }, 'image/png');
+      } else {
+        // Desktop: direct download
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = dataUrl;
+        link.click();
+      }
+    });
+  }
+
+  function openImageInNewTab(dataUrl) {
+    // Opens the image in a new tab — on mobile the user can long-press → Save Image
+    const w = window.open('', '_blank');
+    w.document.write(`
+      <html><head><title>Resultado Handball</title>
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <style>body{margin:0;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;color:#aaa;}
+      img{max-width:100%;border-radius:10px;}p{font-size:14px;margin-top:16px;text-align:center;}</style></head>
+      <body><img src="${dataUrl}"><p>Mantené presionada la imagen y elegí "Guardar imagen"</p></body></html>
+    `);
+    w.document.close();
   }
