@@ -7,6 +7,10 @@
     penalties: { left: [], right: [] },
     arrow: 'none',
     currentLogoTarget: null,
+    timeout: {
+      left:  { seconds: 60, running: false },
+      right: { seconds: 60, running: false },
+    },
   };
 
   // --- Audio Context for Alerts ---
@@ -251,6 +255,7 @@
       document.getElementById('viewerImage').src = img.src;
       openModal('viewerModal');
     } else {
+      if (typeof isViewer !== 'undefined' && isViewer) return;
       resetLogoModal();
       openModal('logoModal');
     }
@@ -436,9 +441,18 @@
     openModal('shareModal');
     document.getElementById('shareStatus').textContent = 'Conectando al servidor...';
     
-    peer = new Peer();
+    // Recuperar ID de sesión anterior si existe
+    let savedPeerId = localStorage.getItem('handball_peer_id');
+    if (savedPeerId) {
+      peer = new Peer(savedPeerId);
+    } else {
+      peer = new Peer();
+    }
     
     peer.on('open', (id) => {
+      // Guardar el ID para que sea fijo en el futuro
+      localStorage.setItem('handball_peer_id', id);
+
       document.getElementById('shareStatus').textContent = '¡Listo! Transmitiendo en vivo.';
       document.getElementById('shareStatus').style.color = '#00cc44';
       
@@ -522,6 +536,8 @@
         renderTimer();
         renderPenalties('left');
         renderPenalties('right');
+        renderTimeout('left');
+        renderTimeout('right');
       });
       conn.on('close', () => { setStatus('DESCONECTADO DEL ORIGEN'); });
     });
@@ -692,4 +708,73 @@
       <body><img src="${dataUrl}"><p>Mantené presionada la imagen y elegí "Guardar imagen"</p></body></html>
     `);
     w.document.close();
+  }
+
+  /* ── Timeout (Tiempo Muerto) ── */
+  const timeoutIntervals = { left: null, right: null };
+
+  function toggleTimeout(side) {
+    const t = state.timeout[side];
+    if (t.seconds <= 0) return;
+
+    if (t.running) {
+      // --- Pausar tiempo muerto manualmente ---
+      t.running = false;
+      clearInterval(timeoutIntervals[side]);
+      timeoutIntervals[side] = null;
+      // No reanuda el partido automáticamente
+    } else {
+      // --- Iniciar tiempo muerto ---
+      // Si el partido está corriendo, pausarlo
+      if (state.timerRunning) {
+        pauseTimer();
+      }
+      t.running = true;
+      timeoutIntervals[side] = setInterval(() => {
+        if (t.seconds > 0) {
+          t.seconds--;
+          renderTimeout(side);
+          if (t.seconds === 0) {
+            t.running = false;
+            clearInterval(timeoutIntervals[side]);
+            timeoutIntervals[side] = null;
+            renderTimeout(side);
+            playPenaltyAlert(side);
+            // Flash the timeout display
+            const el = document.getElementById('timeout' + side.charAt(0).toUpperCase() + side.slice(1));
+            if (el) { el.classList.add('timeout-expired'); setTimeout(() => el.classList.remove('timeout-expired'), 4000); }
+            // No reanuda el partido automáticamente
+          }
+        }
+      }, 1000);
+    }
+    renderTimeout(side);
+  }
+
+  function resetTimeout(side) {
+    state.timeout[side].seconds = 60;
+    state.timeout[side].running = false;
+    clearInterval(timeoutIntervals[side]);
+    timeoutIntervals[side] = null;
+    renderTimeout(side);
+  }
+
+
+  function renderTimeout(side) {
+    const t = state.timeout[side];
+    const cap = side.charAt(0).toUpperCase() + side.slice(1);
+    const timerEl  = document.getElementById('timeout' + cap);
+    const btnEl    = document.getElementById('timeoutBtn' + cap);
+    if (!timerEl || !btnEl) return;
+    const m = Math.floor(t.seconds / 60), s = t.seconds % 60;
+    timerEl.textContent = `${pad2(m)}:${pad2(s)}`;
+    if (t.running) {
+      timerEl.classList.add('running');
+      btnEl.textContent = '⏸';
+      btnEl.classList.add('btn-red'); btnEl.classList.remove('btn-orange');
+    } else {
+      timerEl.classList.remove('running');
+      btnEl.textContent = t.seconds > 0 ? '▶' : '✔';
+      btnEl.classList.remove('btn-red'); btnEl.classList.add('btn-orange');
+    }
   }

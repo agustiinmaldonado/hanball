@@ -112,9 +112,9 @@
       background: transparent; border: none; outline: none;
       color: var(--led-yellow);
       font-family: var(--font-led);
-      font-size: clamp(11px, 2.3vw, 20px);
+      font-size: clamp(15px, 3vw, 28px);
       font-weight: 900;
-      letter-spacing: 3px;
+      letter-spacing: 4px;
       text-transform: uppercase;
       text-shadow: var(--shadow-led);
       width: 100%;
@@ -220,22 +220,26 @@
 
     .penalty-num {
       font-family: var(--font-mono);
-      font-size: clamp(10px, 1.5vw, 14px);
-      color: var(--led-yellow); text-shadow: 0 0 6px #FFD70099;
-      width: 24px; text-align: center;
-      background: var(--bg-panel); border: 1px solid #333;
-      border-radius: 2px; padding: 1px 2px;
+      font-size: clamp(18px, 2.5vw, 26px);
+      font-weight: 700;
+      color: var(--led-yellow); text-shadow: 0 0 8px #FFD700bb;
+      width: 48px; text-align: center;
+      background: var(--bg-panel); border: 1px solid #555;
+      border-radius: 4px; padding: 4px 6px;
       cursor: text;
+      letter-spacing: 1px;
     }
 
     .penalty-timer-display {
       font-family: var(--font-mono);
-      font-size: clamp(11px, 1.5vw, 15px);
-      color: var(--led-yellow); text-shadow: 0 0 6px #FFD70099;
-      background: var(--bg-panel); border: 1px solid #333;
-      border-radius: 2px; padding: 1px 4px;
+      font-size: clamp(18px, 2.5vw, 26px);
+      font-weight: 700;
+      color: var(--led-yellow); text-shadow: 0 0 8px #FFD700bb;
+      background: var(--bg-panel); border: 1px solid #555;
+      border-radius: 4px; padding: 4px 10px;
       flex: 1; text-align: center;
-      cursor: pointer; min-width: 56px;
+      cursor: pointer; min-width: 80px;
+      letter-spacing: 2px;
     }
 
     .penalty-timer-display.running {
@@ -248,14 +252,54 @@
       50% { opacity: 0.55; }
     }
 
+    /* ── Timeout (Tiempo Muerto) ── */
+    .timeout-section {
+      padding: 6px 8px;
+      background: #0d0800;
+      border: 2px solid var(--led-orange); border-radius: 4px;
+      margin: 0 5px 5px;
+      text-align: center;
+    }
+
+    .timeout-label {
+      font-size: 9px; letter-spacing: 3px;
+      color: var(--led-orange); text-shadow: 0 0 6px #FFA50088;
+      text-align: center; margin-bottom: 4px; font-weight: 700;
+    }
+
+    .timeout-timer-display {
+      font-family: var(--font-mono);
+      font-size: clamp(26px, 4vw, 40px);
+      font-weight: 700;
+      color: var(--led-orange); text-shadow: 0 0 10px #FFA500cc;
+      letter-spacing: 3px;
+      line-height: 1.1;
+    }
+
+    .timeout-timer-display.running {
+      color: var(--led-red); text-shadow: var(--shadow-red);
+      animation: blink-soft 0.8s infinite;
+    }
+
+    .timeout-expired {
+      animation: timeout-flash 0.4s ease-in-out 5 !important;
+    }
+
+    @keyframes timeout-flash {
+      0%, 100% { color: var(--led-orange); text-shadow: 0 0 10px #FFA500cc; }
+      50%       { color: #fff; text-shadow: 0 0 30px #fff, 0 0 60px var(--led-orange); }
+    }
+
+
     .flash-green {
       animation: flash-green-anim 1s cubic-bezier(0.1, 0.9, 0.2, 1) !important;
     }
-    
+
     @keyframes flash-green-anim {
       0% { box-shadow: 0 0 40px #00ff00 inset, 0 0 20px #00ff00; border-color: #00ff00; }
       100% { box-shadow: none; border-color: #333; }
     }
+
 
     /* ── Center Panel ── */
     .center-panel {
@@ -513,8 +557,8 @@
       .team-header { padding: 4px; gap: 4px; }
       .team-arrow { font-size: 16px; }
       
-      .penalty-num { width: 20px; font-size: 10px; }
-      .penalty-timer-display { min-width: 44px; font-size: 11px; }
+      .penalty-num { width: 22px; font-size: 11px; }
+      .penalty-timer-display { min-width: 64px; font-size: 16px; padding: 3px 8px; }
       
       .control-bar { padding: 4px; gap: 4px; }
       .btn-main { font-size: 10px; padding: 6px 2px; letter-spacing: 0; flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap; }

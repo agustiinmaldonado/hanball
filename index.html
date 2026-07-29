@@ -65,6 +65,15 @@
           <button class="btn btn-red btn-sm" style="font-size:10px;padding:2px 8px;" onclick="addPenalty('left')">+ PENA</button>
         </div>
       </div>
+
+      <div class="timeout-section">
+        <div class="timeout-label">T.MUERTO</div>
+        <div class="timeout-timer-display" id="timeoutLeft">01:00</div>
+        <div style="display:flex;gap:4px;justify-content:center;margin-top:6px;">
+          <button class="btn btn-orange btn-sm" id="timeoutBtnLeft" style="font-size:13px;padding:3px 14px;" onclick="toggleTimeout('left')">▶</button>
+          <button class="btn btn-sm" style="font-size:11px;padding:3px 8px;" onclick="resetTimeout('left')">↺</button>
+        </div>
+      </div>
     </div>
 
     <!-- CENTER -->
@@ -148,6 +157,15 @@
         <div class="penalty-rows" id="penaltiesRight"></div>
         <div style="display:flex;justify-content:center;margin-top:5px;">
           <button class="btn btn-red btn-sm" style="font-size:10px;padding:2px 8px;" onclick="addPenalty('right')">+ PENA</button>
+        </div>
+      </div>
+
+      <div class="timeout-section">
+        <div class="timeout-label">T.MUERTO</div>
+        <div class="timeout-timer-display" id="timeoutRight">01:00</div>
+        <div style="display:flex;gap:4px;justify-content:center;margin-top:6px;">
+          <button class="btn btn-orange btn-sm" id="timeoutBtnRight" style="font-size:13px;padding:3px 14px;" onclick="toggleTimeout('right')">▶</button>
+          <button class="btn btn-sm" style="font-size:11px;padding:3px 8px;" onclick="resetTimeout('right')">↺</button>
         </div>
       </div>
     </div>
