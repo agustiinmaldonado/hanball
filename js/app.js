@@ -11,6 +11,7 @@
       left:  { seconds: 60, running: false },
       right: { seconds: 60, running: false },
     },
+    events: [],
   };
 
   // --- Audio Context for Alerts ---
@@ -25,12 +26,24 @@
   document.addEventListener('click', initAudio, { once: true });
   document.addEventListener('touchstart', initAudio, { once: true });
 
+  function logEvent(description) {
+    const m = Math.floor(state.timerSeconds / 60);
+    const s = state.timerSeconds % 60;
+    const timeStr = `${pad2(m)}:${pad2(s)}`;
+    const period = state.period;
+    state.events.push({ timeStr, period, description });
+  }
+
   let timerInterval = null;
 
   /* ── Score ── */
   function changeScore(side, delta) {
     const key = side === 'left' ? 'scoreLeft' : 'scoreRight';
     state[key] = Math.max(0, state[key] + delta);
+    if (delta > 0) {
+      const team = side === 'left' ? document.getElementById('teamNameLeft').value : document.getElementById('teamNameRight').value;
+      logEvent(`GOL - ${team} (Marcador: ${state.scoreLeft} - ${state.scoreRight})`);
+    }
     const el = document.getElementById(key);
     el.textContent = pad2(state[key]);
     el.style.color = '#fff';
@@ -123,18 +136,12 @@
 
   /* ── Period ── */
   function changePeriod(delta) {
+    if (state.timerRunning || state.timerSeconds > 0) {
+      showAlert("El período solo se puede cambiar cuando el tiempo está detenido y en 00:00.");
+      return;
+    }
     state.period = Math.max(1, Math.min(state.period + delta, 9));
     document.getElementById('periodNum').textContent = state.period;
-    if (state.period >= 2) {
-      document.getElementById('ht2Block').style.display = '';
-      // Hide 1st half save button — period 1 is already locked
-      const btn1 = document.getElementById('btnSave1Wrap');
-      if (btn1) btn1.style.display = 'none';
-    } else {
-      // Back to period 1 — show button again
-      const btn1 = document.getElementById('btnSave1Wrap');
-      if (btn1) btn1.style.display = '';
-    }
     resetTimer();
   }
 
@@ -164,6 +171,8 @@
   /* ── Penalties ── */
   function addPenalty(side) {
     state.penalties[side].push({ id: Date.now(), seconds: 120, running: false, player: '??' });
+    const team = side === 'left' ? document.getElementById('teamNameLeft').value : document.getElementById('teamNameRight').value;
+    logEvent(`PENAL AGREGADO - ${team}`);
     renderPenalties(side);
   }
 
@@ -240,7 +249,11 @@
 
   function updatePlayer(side, id, val) {
     const pen = state.penalties[side].find(p => p.id === id);
-    if (pen) pen.player = val || '??';
+    if (pen) {
+      pen.player = val || '??';
+      const team = side === 'left' ? document.getElementById('teamNameLeft').value : document.getElementById('teamNameRight').value;
+      logEvent(`JUGADOR PENADO - ${team} (Camiseta N° ${pen.player})`);
+    }
   }
 
   /* ── Logo ── */
@@ -628,6 +641,15 @@
     screen.style.display = 'flex';
   }
 
+  function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+  }
+  
+  function showAlert(msg) {
+    document.getElementById('alertMessage').textContent = msg;
+    openModal('alertModal');
+  }
+
   function closeResultScreen() {
     document.getElementById('resultScreen').style.display = 'none';
   }
@@ -725,6 +747,9 @@
       // No reanuda el partido automáticamente
     } else {
       // --- Iniciar tiempo muerto ---
+      const team = side === 'left' ? document.getElementById('teamNameLeft').value : document.getElementById('teamNameRight').value;
+      logEvent(`TIEMPO MUERTO SOLICITADO - ${team}`);
+      
       // Si el partido está corriendo, pausarlo
       if (state.timerRunning) {
         pauseTimer();
@@ -749,6 +774,47 @@
       }, 1000);
     }
     renderTimeout(side);
+  }
+
+  function resetTimeout(side) {
+    state.timeout[side].seconds = 60;
+    state.timeout[side].running = false;
+    clearInterval(timeoutIntervals[side]);
+    timeoutIntervals[side] = null;
+    renderTimeout(side);
+  }
+
+  /* ── Match Log Export ── */
+  function downloadMatchLog() {
+    let txt = `=================================================\n`;
+    txt += `          PLANILLA DEL PARTIDO\n`;
+    txt += `  Torneo: ${document.getElementById('tournamentName').value || 'Sin nombre'}\n`;
+    txt += `  Partido: ${document.getElementById('teamNameLeft').value} vs ${document.getElementById('teamNameRight').value}\n`;
+    txt += `  Resultado Final: ${state.scoreLeft} - ${state.scoreRight}\n`;
+    txt += `=================================================\n\n`;
+    txt += `HISTORIAL DE EVENTOS:\n`;
+    txt += `-------------------------------------------------\n`;
+    txt += `Período | Reloj  | Evento\n`;
+    txt += `-------------------------------------------------\n`;
+    
+    if (state.events.length === 0) {
+      txt += `No se registraron eventos en este partido.\n`;
+    } else {
+      state.events.forEach(e => {
+        txt += `   ${e.period}    | ${e.timeStr}  | ${e.description}\n`;
+      });
+    }
+    txt += `-------------------------------------------------\n`;
+
+    const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `planilla-partido-${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   function resetTimeout(side) {

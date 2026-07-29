@@ -152,6 +152,7 @@
     <button class="btn btn-main btn-red" onclick="confirmReset()">REINICIAR</button>
     <button class="btn btn-main" style="background:#0055ff; border-color:#00aaff; color:#fff; text-shadow:none;" onclick="initAdminNetwork()">COMPARTIR</button>
     <button class="btn btn-main" style="background:#6600cc; border-color:#aa44ff; color:#fff; text-shadow:none;" onclick="showResultModal()">FOTO</button>
+    <button class="btn btn-main btn-orange" onclick="downloadMatchLog()">PLANILLA</button>
   </div>
 </div>
 
@@ -368,6 +369,16 @@
     </div>
     <div class="modal-actions" style="margin-top:10px;">
       <button class="btn btn-main btn-red" onclick="closeModal('shareModal')">✖ CERRAR</button>
+    </div>
+  </div>
+</div>
+<!-- Modal: Alert -->
+<div class="modal-overlay" id="alertModal" onclick="if(event.target===this) closeModal('alertModal')">
+  <div class="modal" style="max-width:320px; gap:14px; text-align:center;">
+    <h3 style="color:var(--led-orange);">ATENCIÓN</h3>
+    <div id="alertMessage" style="font-size:14px; color:#ccc; line-height:1.4; margin-bottom:10px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-main btn-green" onclick="closeModal('alertModal')">ENTENDIDO</button>
     </div>
   </div>
 </div>
