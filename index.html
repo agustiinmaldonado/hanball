@@ -32,9 +32,7 @@
 
   <!-- Header -->
   <div class="panel header">
-    <div class="logo-badge">🤾</div>
     <input id="tournamentName" class="tournament-name" value="NACIONAL 2026" maxlength="30" title="Editar torneo" />
-    <div class="logo-badge" style="background:linear-gradient(135deg,#0044cc,#00aaff);">🏆</div>
   </div>
 
   <!-- Main -->
@@ -90,30 +88,6 @@
           <button class="btn btn-sm" onclick="openTimerModal()">⏱ SET</button>
           <button class="btn btn-sm" onclick="addTime(60)">+1'</button>
           <button class="btn btn-red btn-sm" onclick="addTime(-60)">−1'</button>
-        </div>
-      </div>
-
-      <div class="halftime-block">
-        <div class="halftime-label">1° TIEMPO</div>
-        <div class="halftime-scores">
-          <span class="halftime-num" id="ht1Left">0</span>
-          <span class="halftime-sep">—</span>
-          <span class="halftime-num" id="ht1Right">0</span>
-        </div>
-        <div style="display:flex;justify-content:center;margin-top:4px;" id="btnSave1Wrap">
-          <button class="btn btn-sm" style="font-size:9px;padding:2px 8px;" onclick="saveHalftime()">GUARDAR PARCIAL</button>
-        </div>
-      </div>
-
-      <div class="halftime-block" id="ht2Block" style="display:none;">
-        <div class="halftime-label">2° TIEMPO</div>
-        <div class="halftime-scores">
-          <span class="halftime-num" id="ht2Left">0</span>
-          <span class="halftime-sep">—</span>
-          <span class="halftime-num" id="ht2Right">0</span>
-        </div>
-        <div style="display:flex;justify-content:center;margin-top:4px;">
-          <button class="btn btn-sm" style="font-size:9px;padding:2px 8px;" onclick="saveHalftime()">GUARDAR PARCIAL</button>
         </div>
       </div>
 
