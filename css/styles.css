@@ -670,6 +670,8 @@
       body.viewer-mode .timer-block {
         width: 100%;
         text-align: center;
+        flex: 0 0 auto;
+        padding-bottom: 2px;
       }
       body.viewer-mode .timer-display {
         font-size: clamp(56px, 18vw, 96px) !important;
@@ -696,7 +698,7 @@
       body.viewer-mode .main-area {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: auto auto;
+        grid-template-rows: auto 1fr;
       }
       body.viewer-mode .center-panel {
         grid-column: 1 / -1;
