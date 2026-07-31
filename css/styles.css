@@ -679,11 +679,14 @@
         letter-spacing: 3px;
       }
       body.viewer-mode .period-block {
-        width: 100%;
-        padding: 6px 0;
+        width: auto;
+        min-width: 80px;
+        padding: 4px 12px;
+        flex: 0 0 auto;
+        margin-top: -2px; /* Pull it slightly closer to timer */
       }
       body.viewer-mode .period-num {
-        font-size: clamp(32px, 10vw, 52px);
+        font-size: clamp(24px, 8vw, 36px);
       }
 
       /* Los dos equipos: lado a lado en una fila */
