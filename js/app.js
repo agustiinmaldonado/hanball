@@ -540,9 +540,13 @@
 
   function fullReset() {
     pauseTimer();
+    
+    // Reset periodMinutes to default 30 so the timer restores to 30:00
+    state.periodMinutes = 30;
+    
     Object.assign(state, {
       scoreLeft:0, scoreRight:0, period:1,
-      timerSeconds: state.periodMinutes * 60,
+      timerSeconds: 30 * 60,
       timerRunning: false,
       ht1Left:0, ht1Right:0, ht2Left:0, ht2Right:0,
       penalties: { left:[], right:[] }, arrow:'none',
@@ -570,6 +574,12 @@
     document.getElementById('ht2Block').style.display = 'none';
     document.getElementById('penaltiesLeft').innerHTML = '';
     document.getElementById('penaltiesRight').innerHTML = '';
+
+    // Reset timer display properly (removes warning class too)
+    document.getElementById('mainTimer').classList.remove('warning');
+    document.getElementById('btnTimerStart').textContent = '▶ INICIAR';
+    document.getElementById('btnTimerStart').classList.add('btn-green');
+    document.getElementById('btnTimerStart').classList.remove('btn-red');
     
     setArrow('none');
     renderTimer();
@@ -579,6 +589,7 @@
     localStorage.removeItem(SAVE_KEY);
     broadcastState();
   }
+
 
   /* ── Modals ── */
   function openModal(id) { document.getElementById(id).classList.add('open'); }
