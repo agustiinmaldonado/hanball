@@ -609,6 +609,16 @@
     document.body.classList.add('viewer-mode');
     document.getElementById('loginOverlay').style.display = 'none';
     setStatus('ESPECTADOR - CONECTANDO...');
+    
+    // Make team names clickable for viewers to see the logo/name full screen
+    ['Left', 'Right'].forEach(side => {
+      const input = document.getElementById('teamName' + side);
+      input.readOnly = true;
+      input.style.pointerEvents = 'auto';
+      input.style.cursor = 'zoom-in';
+      input.addEventListener('click', () => handleLogoClick('logo' + side));
+    });
+
     initViewer(watchId);
   } else {
     // Restore session: if already authenticated in this browser session, skip login

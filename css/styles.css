@@ -178,6 +178,9 @@
       min-width: 130px;
       box-shadow: 0 6px 24px #FFD70044;
     }
+    #colorPopoverRight {
+      left: auto; right: 0;
+    }
     .color-picker-popover.open { display: flex; }
     .color-picker-popover input[type="color"] {
       width: 100%; height: 44px;
@@ -622,8 +625,7 @@
     body.viewer-mode .btn,
     body.viewer-mode .control-bar,
     body.viewer-mode .score-controls,
-    body.viewer-mode .team-color-picker,
-    body.viewer-mode .color-reset-btn,
+    body.viewer-mode .color-picker-wrap,
     body.viewer-mode .penalty-rows button { display: none !important; }
     body.viewer-mode .team-name-input,
     body.viewer-mode .tournament-name,
