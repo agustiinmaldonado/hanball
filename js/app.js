@@ -658,6 +658,8 @@
       if (loadState()) {
         setStatus('PARTIDO RESTAURADO');
       }
+      // Auto-connect network so spectators can connect immediately
+      setTimeout(initAdminNetworkSilent, 500);
     } else {
       document.getElementById('loginPin').focus();
     }
@@ -671,12 +673,35 @@
       if (loadState()) {
         setStatus('PARTIDO RESTAURADO');
       }
+      // Auto-connect network
+      setTimeout(initAdminNetworkSilent, 500);
     } else {
       const err = document.getElementById('loginError');
       err.style.display = 'block';
       document.getElementById('loginPin').value = '';
       setTimeout(() => err.style.display = 'none', 2000);
     }
+  }
+
+  // Silently start broadcasting in background (no modal)
+  function initAdminNetworkSilent() {
+    if (peer && peer.open) return; // already connected
+    const ROOM_ID = 'handball-frias-live';
+    if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+    peer = new Peer(ROOM_ID);
+    peer.on('open', () => {
+      setInterval(broadcastState, 1000);
+    });
+    peer.on('connection', (conn) => {
+      connections.push(conn);
+      conn.on('open', () => broadcastState());
+      conn.on('close', () => { connections = connections.filter(c => c !== conn); });
+    });
+    peer.on('error', (err) => {
+      if (err.type !== 'unavailable-id') {
+        setTimeout(initAdminNetworkSilent, 5000); // retry on error
+      }
+    });
   }
 
   function initAdminNetwork() {
