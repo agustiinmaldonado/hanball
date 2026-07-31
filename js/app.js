@@ -166,8 +166,10 @@
         renderTimer();
         tickPenalties('left');
         tickPenalties('right');
+        broadcastState();
       } else {
         endPeriodTime();
+        broadcastState();
       }
     }, 1000);
   }
@@ -997,17 +999,18 @@
         if (t.seconds > 0) {
           t.seconds--;
           renderTimeout(side);
-          if (t.seconds === 0) {
-            t.running = false;
-            clearInterval(timeoutIntervals[side]);
-            timeoutIntervals[side] = null;
-            renderTimeout(side);
-            playPenaltyAlert(side);
-            // Flash the timeout display
-            const el = document.getElementById('timeout' + side.charAt(0).toUpperCase() + side.slice(1));
-            if (el) { el.classList.add('timeout-expired'); setTimeout(() => el.classList.remove('timeout-expired'), 4000); }
-            // No reanuda el partido automáticamente
-          }
+          broadcastState();
+        } else {
+          t.running = false;
+          clearInterval(timeoutIntervals[side]);
+          timeoutIntervals[side] = null;
+          renderTimeout(side);
+          playPenaltyAlert(side);
+          broadcastState();
+          // Flash the timeout display
+          const el = document.getElementById('timeout' + side.charAt(0).toUpperCase() + side.slice(1));
+          if (el) { el.classList.add('timeout-expired'); setTimeout(() => el.classList.remove('timeout-expired'), 4000); }
+          // No reanuda el partido automáticamente
         }
       }, 1000);
     }
