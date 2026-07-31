@@ -764,41 +764,140 @@
   setInterval(() => { if (!isViewer && state.timerRunning) saveState(); }, 5000);
 
   function initViewer(watchId) {
-    peer = new Peer();
-    peer.on('open', () => {
-      const conn = peer.connect(watchId);
-      conn.on('open', () => { setStatus('🔴 TRANSMISIÓN EN VIVO'); });
-      conn.on('data', (data) => {
-        Object.assign(state, data.state);
-        document.getElementById('tournamentName').value = data.tournamentName;
-        document.getElementById('teamNameLeft').value = data.teamNameLeft;
-        document.getElementById('teamNameRight').value = data.teamNameRight;
-        document.getElementById('teamColorLeft').value = data.teamColorLeft;
-        document.getElementById('teamColorRight').value = data.teamColorRight;
-        updateTeamColor('left', data.teamColorLeft);
-        updateTeamColor('right', data.teamColorRight);
-        document.getElementById('logoLeft').innerHTML = data.logoLeftHtml;
-        document.getElementById('logoRight').innerHTML = data.logoRightHtml;
-        
-        document.getElementById('scoreLeft').textContent = pad2(state.scoreLeft);
-        document.getElementById('scoreRight').textContent = pad2(state.scoreRight);
-        document.getElementById('periodNum').textContent = state.period;
-        document.getElementById('ht1Left').textContent = state.ht1Left;
-        document.getElementById('ht1Right').textContent = state.ht1Right;
-        document.getElementById('ht2Left').textContent = state.ht2Left;
-        document.getElementById('ht2Right').textContent = state.ht2Right;
-        document.getElementById('ht2Block').style.display = state.period >= 2 ? '' : 'none';
-        
-        setArrow(state.arrow);
-        renderTimer();
-        renderPenalties('left');
-        renderPenalties('right');
-        renderTimeout('left');
-        renderTimeout('right');
+    let viewerTimerInterval = null;
+    let viewerTimeoutIntervals = { left: null, right: null };
+    let retryCount = 0;
+    const MAX_RETRIES = 5;
+
+    function startViewerTimer() {
+      clearInterval(viewerTimerInterval);
+      if (!state.timerRunning) return;
+      viewerTimerInterval = setInterval(() => {
+        if (state.timerRunning && state.timerSeconds > 0) {
+          state.timerSeconds--;
+          renderTimer();
+        } else if (state.timerSeconds <= 0) {
+          clearInterval(viewerTimerInterval);
+        }
+      }, 1000);
+    }
+
+    function startViewerTimeouts() {
+      ['left', 'right'].forEach(side => {
+        clearInterval(viewerTimeoutIntervals[side]);
+        if (!state.timeout[side].running) return;
+        viewerTimeoutIntervals[side] = setInterval(() => {
+          if (state.timeout[side].running && state.timeout[side].seconds > 0) {
+            state.timeout[side].seconds--;
+            renderTimeoutViewer(side);
+          } else {
+            clearInterval(viewerTimeoutIntervals[side]);
+          }
+        }, 1000);
       });
-      conn.on('close', () => { setStatus('DESCONECTADO DEL ORIGEN'); });
-    });
-    peer.on('error', () => { setStatus('ERROR DE CONEXIÓN'); });
+    }
+
+    function renderTimeoutViewer(side) {
+      const t = state.timeout[side];
+      const cap = side.charAt(0).toUpperCase() + side.slice(1);
+      const timerEl = document.getElementById('timeout' + cap);
+      if (!timerEl) return;
+      const m = Math.floor(t.seconds / 60), s = t.seconds % 60;
+      timerEl.textContent = `${pad2(m)}:${pad2(s)}`;
+      if (t.running) {
+        timerEl.classList.add('running');
+      } else {
+        timerEl.classList.remove('running');
+      }
+    }
+
+    function applyReceivedData(data) {
+      // Stop local timers — we'll re-sync from received state
+      clearInterval(viewerTimerInterval);
+      clearInterval(viewerTimeoutIntervals.left);
+      clearInterval(viewerTimeoutIntervals.right);
+
+      Object.assign(state, data.state);
+      document.getElementById('tournamentName').value = data.tournamentName;
+      document.getElementById('teamNameLeft').value   = data.teamNameLeft;
+      document.getElementById('teamNameRight').value  = data.teamNameRight;
+      document.getElementById('teamColorLeft').value  = data.teamColorLeft;
+      document.getElementById('teamColorRight').value = data.teamColorRight;
+      updateTeamColor('left',  data.teamColorLeft);
+      updateTeamColor('right', data.teamColorRight);
+      document.getElementById('logoLeft').innerHTML  = data.logoLeftHtml;
+      document.getElementById('logoRight').innerHTML = data.logoRightHtml;
+
+      document.getElementById('scoreLeft').textContent  = pad2(state.scoreLeft);
+      document.getElementById('scoreRight').textContent = pad2(state.scoreRight);
+      document.getElementById('periodNum').textContent  = state.period;
+      document.getElementById('ht1Left').textContent    = state.ht1Left;
+      document.getElementById('ht1Right').textContent   = state.ht1Right;
+      document.getElementById('ht2Left').textContent    = state.ht2Left;
+      document.getElementById('ht2Right').textContent   = state.ht2Right;
+      document.getElementById('ht2Block').style.display = state.period >= 2 ? '' : 'none';
+
+      setArrow(state.arrow);
+      renderTimer();
+      renderPenalties('left');
+      renderPenalties('right');
+      renderTimeoutViewer('left');
+      renderTimeoutViewer('right');
+
+      // Restart local timers to keep ticking smoothly between packets
+      startViewerTimer();
+      startViewerTimeouts();
+    }
+
+    function connect() {
+      if (!peer || peer.destroyed) {
+        peer = new Peer();
+      }
+      peer.on('open', () => {
+        setStatus('CONECTANDO...');
+        const conn = peer.connect(watchId, { reliable: true });
+
+        conn.on('open', () => {
+          retryCount = 0;
+          setStatus('🔴 TRANSMISIÓN EN VIVO');
+        });
+
+        conn.on('data', (data) => { applyReceivedData(data); });
+
+        conn.on('close', () => {
+          clearInterval(viewerTimerInterval);
+          setStatus('DESCONECTADO — reconectando...');
+          if (retryCount < MAX_RETRIES) {
+            retryCount++;
+            setTimeout(connect, 3000);
+          } else {
+            setStatus('SIN CONEXIÓN CON EL OPERADOR');
+          }
+        });
+
+        conn.on('error', () => {
+          setStatus('ERROR — reintentando...');
+          if (retryCount < MAX_RETRIES) {
+            retryCount++;
+            setTimeout(connect, 3000);
+          }
+        });
+      });
+
+      peer.on('error', (err) => {
+        setStatus('ERROR DE CONEXIÓN — reintentando...');
+        if (retryCount < MAX_RETRIES) {
+          retryCount++;
+          setTimeout(() => {
+            try { peer.destroy(); } catch(e) {}
+            peer = null;
+            connect();
+          }, 3000);
+        }
+      });
+    }
+
+    connect();
   }
 
   /* ── Result Generator ── */
