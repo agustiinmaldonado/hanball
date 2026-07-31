@@ -14,6 +14,65 @@
     events: [],
   };
 
+  /* ── Persistence ── */
+  const SAVE_KEY = 'handball_match_v1';
+
+  function saveState() {
+    try {
+      const snap = {
+        state: JSON.parse(JSON.stringify(state)),
+        tournamentName: document.getElementById('tournamentName')?.value || '',
+        teamNameLeft:   document.getElementById('teamNameLeft')?.value   || '',
+        teamNameRight:  document.getElementById('teamNameRight')?.value  || '',
+        teamColorLeft:  document.getElementById('teamColorLeft')?.value  || '#FFD700',
+        teamColorRight: document.getElementById('teamColorRight')?.value || '#FFD700',
+        logoLeftHtml:   document.getElementById('logoLeft')?.innerHTML   || '',
+        logoRightHtml:  document.getElementById('logoRight')?.innerHTML  || '',
+      };
+      // timerRunning always saves as false (can't restore a live timer)
+      snap.state.timerRunning = false;
+      snap.state.timeout.left.running  = false;
+      snap.state.timeout.right.running = false;
+      localStorage.setItem(SAVE_KEY, JSON.stringify(snap));
+    } catch(e) { console.warn('saveState error', e); }
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return false;
+      const snap = JSON.parse(raw);
+      // Restore state object
+      Object.assign(state, snap.state);
+      // Restore DOM text fields
+      document.getElementById('tournamentName').value  = snap.tournamentName;
+      document.getElementById('teamNameLeft').value    = snap.teamNameLeft;
+      document.getElementById('teamNameRight').value   = snap.teamNameRight;
+      document.getElementById('teamColorLeft').value   = snap.teamColorLeft;
+      document.getElementById('teamColorRight').value  = snap.teamColorRight;
+      updateTeamColor('left',  snap.teamColorLeft);
+      updateTeamColor('right', snap.teamColorRight);
+      document.getElementById('logoLeft').innerHTML    = snap.logoLeftHtml;
+      document.getElementById('logoRight').innerHTML   = snap.logoRightHtml;
+      // Restore score display
+      document.getElementById('scoreLeft').textContent  = pad2(state.scoreLeft);
+      document.getElementById('scoreRight').textContent = pad2(state.scoreRight);
+      document.getElementById('periodNum').textContent  = state.period;
+      document.getElementById('ht1Left').textContent    = state.ht1Left;
+      document.getElementById('ht1Right').textContent   = state.ht1Right;
+      document.getElementById('ht2Left').textContent    = state.ht2Left;
+      document.getElementById('ht2Right').textContent   = state.ht2Right;
+      document.getElementById('ht2Block').style.display = state.period >= 2 ? '' : 'none';
+      setArrow(state.arrow);
+      renderTimer();
+      renderPenalties('left');
+      renderPenalties('right');
+      renderTimeout('left');
+      renderTimeout('right');
+      return true;
+    } catch(e) { console.warn('loadState error', e); return false; }
+  }
+
   // --- Audio Context for Alerts ---
   let audioCtx = null;
   function initAudio() {
@@ -47,9 +106,47 @@
     const el = document.getElementById(key);
     el.textContent = pad2(state[key]);
     el.style.color = '#fff';
-    el.style.textShadow = '0 0 20px #fff, 0 0 40px #FFD700';
+    el.style.textShadow = '0 0 20px #fff, 0 0 40px #fff';
     setTimeout(() => { el.style.color = ''; el.style.textShadow = ''; }, 280);
   }
+
+  function updateTeamColor(side, color) {
+    document.documentElement.style.setProperty(`--team-color-${side}`, color);
+    // Keep the circle button in sync
+    const btn = document.getElementById('colorBtn' + side.charAt(0).toUpperCase() + side.slice(1));
+    if (btn) { btn.style.background = color; btn.style.borderColor = color; btn.style.boxShadow = `0 0 8px ${color}`; }
+    if (typeof isViewer !== 'undefined' && !isViewer) broadcastState();
+  }
+
+  function resetTeamColor(side) {
+    const defaultColor = '#FFD700';
+    const cap = side.charAt(0).toUpperCase() + side.slice(1);
+    const inputEl = document.getElementById('teamColor' + cap);
+    if (inputEl) inputEl.value = defaultColor;
+    updateTeamColor(side, defaultColor);
+    closeColorPicker(side);
+  }
+
+  function toggleColorPicker(side) {
+    const cap = side.charAt(0).toUpperCase() + side.slice(1);
+    const popover = document.getElementById('colorPopover' + cap);
+    const otherCap = side === 'left' ? 'Right' : 'Left';
+    document.getElementById('colorPopover' + otherCap).classList.remove('open');
+    popover.classList.toggle('open');
+  }
+
+  function closeColorPicker(side) {
+    const cap = side.charAt(0).toUpperCase() + side.slice(1);
+    const popover = document.getElementById('colorPopover' + cap);
+    if (popover) popover.classList.remove('open');
+  }
+
+  // Close popovers when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.color-picker-wrap')) {
+      document.querySelectorAll('.color-picker-popover').forEach(p => p.classList.remove('open'));
+    }
+  });
 
   /* ── Timer ── */
   function toggleTimer() {
@@ -284,6 +381,15 @@
     openModal('logoModal');
   }
 
+  function removeLogo() {
+    if (!state.currentLogoTarget) return;
+    const el = document.getElementById(state.currentLogoTarget);
+    el.innerHTML = 'LOGO';
+    closeModal('viewerModal');
+    setStatus('LOGO ELIMINADO');
+    if (typeof isViewer !== 'undefined' && !isViewer) broadcastState();
+  }
+
   function resetLogoModal() {
     document.getElementById('logoUrlInput').value = '';
     const prev = document.getElementById('logoPreview');
@@ -299,7 +405,53 @@
   }
 
   function triggerCamera() {
-    document.getElementById('fileInputCamera').click();
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobile) {
+      // En móvil: abre la cámara nativa
+      document.getElementById('fileInputCamera').click();
+    } else {
+      // En PC: abre el modal con webcam
+      openWebcamModal();
+    }
+  }
+
+  let webcamStream = null;
+
+  function openWebcamModal() {
+    closeModal('logoModal');
+    const modal = document.getElementById('webcamModal');
+    modal.classList.add('open');
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        webcamStream = stream;
+        const video = document.getElementById('webcamVideo');
+        video.srcObject = stream;
+        video.play();
+      })
+      .catch(() => {
+        closeWebcamModal();
+        openModal('logoModal');
+        showAlert('No se pudo acceder a la cámara. Asegurate de dar permiso al navegador.');
+      });
+  }
+
+  function closeWebcamModal() {
+    if (webcamStream) {
+      webcamStream.getTracks().forEach(t => t.stop());
+      webcamStream = null;
+    }
+    document.getElementById('webcamModal').classList.remove('open');
+  }
+
+  function captureWebcam() {
+    const video = document.getElementById('webcamVideo');
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    const src = canvas.toDataURL('image/png');
+    closeWebcamModal();
+    setLogoImage(src);
   }
 
   function triggerGallery() {
@@ -375,8 +527,11 @@
     Object.assign(state, {
       scoreLeft:0, scoreRight:0, period:1,
       timerSeconds: state.periodMinutes * 60,
+      timerRunning: false,
       ht1Left:0, ht1Right:0, ht2Left:0, ht2Right:0,
-      penalties: { left:[], right:[] }, arrow:'none'
+      penalties: { left:[], right:[] }, arrow:'none',
+      events: [],
+      timeout: { left: { seconds:60, running:false }, right: { seconds:60, running:false } }
     });
     ['scoreLeft','scoreRight'].forEach(id => document.getElementById(id).textContent = '00');
     document.getElementById('periodNum').textContent = '1';
@@ -386,7 +541,10 @@
     document.getElementById('penaltiesRight').innerHTML = '';
     setArrow('none');
     renderTimer();
+    renderTimeout('left');
+    renderTimeout('right');
     setStatus('NUEVO PARTIDO');
+    localStorage.removeItem(SAVE_KEY);
   }
 
   /* ── Modals ── */
@@ -439,12 +597,26 @@
     setStatus('ESPECTADOR - CONECTANDO...');
     initViewer(watchId);
   } else {
-    document.getElementById('loginPin').focus();
+    // Restore session: if already authenticated in this browser session, skip login
+    if (sessionStorage.getItem('handball_admin') === 'true') {
+      document.getElementById('loginOverlay').style.display = 'none';
+      // Restore match state from localStorage
+      if (loadState()) {
+        setStatus('PARTIDO RESTAURADO');
+      }
+    } else {
+      document.getElementById('loginPin').focus();
+    }
   }
 
   function checkLogin() {
     if (document.getElementById('loginPin').value === 'ATM2019') {
       document.getElementById('loginOverlay').style.display = 'none';
+      sessionStorage.setItem('handball_admin', 'true');
+      // Restore any saved match
+      if (loadState()) {
+        setStatus('PARTIDO RESTAURADO');
+      }
     } else {
       const err = document.getElementById('loginError');
       err.style.display = 'block';
@@ -454,32 +626,29 @@
   }
 
   function initAdminNetwork() {
-    if (peer) {
+    if (peer && peer.open) {
       openModal('shareModal');
       return;
     }
     openModal('shareModal');
     document.getElementById('shareStatus').textContent = 'Conectando al servidor...';
-    
-    // Recuperar ID de sesión anterior si existe
-    let savedPeerId = localStorage.getItem('handball_peer_id');
-    if (savedPeerId) {
-      peer = new Peer(savedPeerId);
-    } else {
-      peer = new Peer();
-    }
-    
-    peer.on('open', (id) => {
-      // Guardar el ID para que sea fijo en el futuro
-      localStorage.setItem('handball_peer_id', id);
+    document.getElementById('shareStatus').style.color = 'var(--led-orange)';
 
-      document.getElementById('shareStatus').textContent = '¡Listo! Transmitiendo en vivo.';
+    // ── ID de sala FIJA ──────────────────────────────────
+    const ROOM_ID = 'handball-frias-live';
+    // ─────────────────────────────────────────────────────
+
+    if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+    peer = new Peer(ROOM_ID);
+
+    peer.on('open', (id) => {
+      document.getElementById('shareStatus').textContent = '✔ EN VIVO — sala: ' + ROOM_ID;
       document.getElementById('shareStatus').style.color = '#00cc44';
-      
+
       const baseUrl = window.location.href.split('?')[0];
-      const shareUrl = `${baseUrl}?watch=${id}`;
+      const shareUrl = `${baseUrl}?watch=${ROOM_ID}`;
       document.getElementById('shareLinkInput').value = shareUrl;
-      
+
       // Generate QR Code
       const qrContainer = document.getElementById('qrcode');
       qrContainer.innerHTML = '';
@@ -491,7 +660,7 @@
         colorLight : "#ffffff",
         correctLevel : QRCode.CorrectLevel.L
       });
-      
+
       setInterval(broadcastState, 1000);
     });
 
@@ -500,10 +669,17 @@
       conn.on('open', () => broadcastState());
       conn.on('close', () => { connections = connections.filter(c => c !== conn); });
     });
-    
+
     peer.on('error', (err) => {
-      document.getElementById('shareStatus').textContent = 'Error de red. Intenta nuevamente.';
-      document.getElementById('shareStatus').style.color = 'var(--led-red)';
+      if (err.type === 'unavailable-id') {
+        // ID taken means another tab/device is already broadcasting with this ID
+        document.getElementById('shareStatus').textContent = '⚠ Sala ocupada — ya hay una transmisión activa en otro dispositivo.';
+        document.getElementById('shareStatus').style.color = 'var(--led-orange)';
+      } else {
+        document.getElementById('shareStatus').textContent = 'Error de red: ' + (err.message || err.type);
+        document.getElementById('shareStatus').style.color = 'var(--led-red)';
+      }
+      peer = null;
     });
   }
 
@@ -521,14 +697,28 @@
       tournamentName: document.getElementById('tournamentName').value,
       teamNameLeft: document.getElementById('teamNameLeft').value,
       teamNameRight: document.getElementById('teamNameRight').value,
+      teamColorLeft: document.getElementById('teamColorLeft').value,
+      teamColorRight: document.getElementById('teamColorRight').value,
       logoLeftHtml: document.getElementById('logoLeft').innerHTML,
       logoRightHtml: document.getElementById('logoRight').innerHTML
     };
     connections.forEach(conn => { if (conn.open) conn.send(payload); });
   }
 
-  document.addEventListener('click', () => { if(!isViewer) setTimeout(broadcastState, 50); });
-  document.addEventListener('keyup', () => { if(!isViewer) setTimeout(broadcastState, 50); });
+  document.addEventListener('click', () => {
+    if (!isViewer) {
+      setTimeout(broadcastState, 50);
+      setTimeout(saveState, 100);
+    }
+  });
+  document.addEventListener('keyup', () => {
+    if (!isViewer) {
+      setTimeout(broadcastState, 50);
+      setTimeout(saveState, 100);
+    }
+  });
+  // Also auto-save every 5 seconds while the timer is running
+  setInterval(() => { if (!isViewer && state.timerRunning) saveState(); }, 5000);
 
   function initViewer(watchId) {
     peer = new Peer();
@@ -540,6 +730,10 @@
         document.getElementById('tournamentName').value = data.tournamentName;
         document.getElementById('teamNameLeft').value = data.teamNameLeft;
         document.getElementById('teamNameRight').value = data.teamNameRight;
+        document.getElementById('teamColorLeft').value = data.teamColorLeft;
+        document.getElementById('teamColorRight').value = data.teamColorRight;
+        updateTeamColor('left', data.teamColorLeft);
+        updateTeamColor('right', data.teamColorRight);
         document.getElementById('logoLeft').innerHTML = data.logoLeftHtml;
         document.getElementById('logoRight').innerHTML = data.logoRightHtml;
         
@@ -847,3 +1041,32 @@
       btnEl.classList.remove('btn-red'); btnEl.classList.add('btn-orange');
     }
   }
+
+  /* ── Wake Lock (Screen On) ── */
+  let wakeLock = null;
+  async function requestWakeLock() {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => {
+          console.log('Wake Lock released');
+        });
+        console.log('Wake Lock active');
+      }
+    } catch (err) {
+      console.log('Wake Lock error:', err.name, err.message);
+    }
+  }
+
+  // Request wake lock on interaction or visibility change
+  document.addEventListener('visibilitychange', () => {
+    if (wakeLock !== null && document.visibilityState === 'visible') {
+      requestWakeLock();
+    }
+  });
+  document.addEventListener('click', () => {
+    if (!wakeLock) requestWakeLock();
+  }, { once: true });
+  document.addEventListener('touchstart', () => {
+    if (!wakeLock) requestWakeLock();
+  }, { once: true });

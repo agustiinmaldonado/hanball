@@ -42,6 +42,13 @@
     <div class="team-panel panel" id="teamPanelLeft">
       <div class="team-header">
         <span class="team-arrow" id="arrowLeft" style="opacity:0;">▶</span>
+        <div class="color-picker-wrap" id="colorWrapLeft">
+          <button class="team-color-btn" id="colorBtnLeft" onclick="toggleColorPicker('left')" title="Color del equipo"></button>
+          <div class="color-picker-popover" id="colorPopoverLeft">
+            <input type="color" id="teamColorLeft" value="#FFD700" onchange="updateTeamColor('left', this.value)" />
+            <button class="btn btn-sm" style="font-size:10px; width:100%;" onclick="resetTeamColor('left')">&#8635; RESTABLECER</button>
+          </div>
+        </div>
         <input id="teamNameLeft" class="team-name-input" value="LOCAL" maxlength="12" title="Nombre del equipo" />
         <div class="team-logo" id="logoLeft" title="Click para cambiar logo">LOGO</div>
       </div>
@@ -107,6 +114,13 @@
     <div class="team-panel panel" id="teamPanelRight">
       <div class="team-header" style="flex-direction:row-reverse;">
         <span class="team-arrow" id="arrowRight" style="opacity:0;">◀</span>
+        <div class="color-picker-wrap" id="colorWrapRight">
+          <button class="team-color-btn" id="colorBtnRight" onclick="toggleColorPicker('right')" title="Color del equipo"></button>
+          <div class="color-picker-popover" id="colorPopoverRight">
+            <input type="color" id="teamColorRight" value="#FFD700" onchange="updateTeamColor('right', this.value)" />
+            <button class="btn btn-sm" style="font-size:10px; width:100%;" onclick="resetTeamColor('right')">&#8635; RESTABLECER</button>
+          </div>
+        </div>
         <input id="teamNameRight" class="team-name-input" value="VISITANTE" maxlength="12"
           title="Nombre del equipo" style="text-align:right;" />
         <div class="team-logo" id="logoRight" title="Click para cambiar logo">LOGO</div>
@@ -338,12 +352,31 @@
   </div>
 </div>
 
+<!-- Modal: Webcam (PC) -->
+<div class="modal-overlay" id="webcamModal">
+  <div class="modal" style="max-width:480px; gap:14px; text-align:center;">
+    <h3>WEBCAM</h3>
+    <video id="webcamVideo" autoplay playsinline style="
+      width:100%; max-height:300px; border-radius:10px;
+      border:2px solid var(--led-yellow);
+      box-shadow:0 0 20px #FFD70055;
+      background:#000;
+      object-fit:cover;
+    "></video>
+    <div class="modal-actions">
+      <button class="btn btn-main btn-green" onclick="captureWebcam()" style="flex:2;">CAPTURAR</button>
+      <button class="btn btn-main btn-red" onclick="closeWebcamModal()" style="flex:1;">✖ CANCELAR</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: Logo Viewer -->
 <div class="modal-overlay" id="viewerModal" onclick="if(event.target===this) closeModal('viewerModal')">
   <div class="modal" style="max-width:90vw; background:transparent; border:none; box-shadow:none; align-items:center;">
     <img id="viewerImage" src="" style="max-width:100%; max-height:70vh; border-radius:12px; border:2px solid var(--led-yellow); box-shadow:0 0 30px #FFD70088; object-fit:contain;" />
     <div class="modal-actions" style="margin-top:10px; width:100%;">
       <button class="btn btn-main btn-green" onclick="openLogoPickerFromViewer()" style="flex:1;">CAMBIAR LOGO</button>
+      <button class="btn btn-main btn-orange" onclick="removeLogo()" style="flex:1;">QUITAR LOGO</button>
       <button class="btn btn-main btn-red" onclick="closeModal('viewerModal')" style="flex:1;">✖ CERRAR</button>
     </div>
   </div>
