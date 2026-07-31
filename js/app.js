@@ -547,18 +547,35 @@
       events: [],
       timeout: { left: { seconds:60, running:false }, right: { seconds:60, running:false } }
     });
+    
+    // Reset inputs
+    document.getElementById('tournamentName').value = 'NACIONAL 2026';
+    document.getElementById('teamNameLeft').value = 'LOCAL';
+    document.getElementById('teamNameRight').value = 'VISITANTE';
+    
+    // Reset logos
+    document.getElementById('logoLeft').innerHTML = 'LOGO';
+    document.getElementById('logoRight').innerHTML = 'LOGO';
+    
+    // Reset colors
+    resetTeamColor('left');
+    resetTeamColor('right');
+    
+    // Reset score UI
     ['scoreLeft','scoreRight'].forEach(id => document.getElementById(id).textContent = '00');
     document.getElementById('periodNum').textContent = '1';
     ['ht1Left','ht1Right'].forEach(id => document.getElementById(id).textContent = '0');
     document.getElementById('ht2Block').style.display = 'none';
     document.getElementById('penaltiesLeft').innerHTML = '';
     document.getElementById('penaltiesRight').innerHTML = '';
+    
     setArrow('none');
     renderTimer();
     renderTimeout('left');
     renderTimeout('right');
     setStatus('NUEVO PARTIDO');
     localStorage.removeItem(SAVE_KEY);
+    broadcastState();
   }
 
   /* ── Modals ── */
