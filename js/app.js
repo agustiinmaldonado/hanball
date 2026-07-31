@@ -365,8 +365,22 @@
     state.currentLogoTarget = targetId;
     const el = document.getElementById(targetId);
     const img = el.querySelector('img');
+    
     if (img && img.src) {
       document.getElementById('viewerImage').src = img.src;
+      // Get the corresponding team name
+      const teamNameId = targetId === 'logoLeft' ? 'teamNameLeft' : 'teamNameRight';
+      const teamName = document.getElementById(teamNameId).value || (targetId === 'logoLeft' ? 'LOCAL' : 'VISITANTE');
+      const teamColor = document.getElementById(targetId === 'logoLeft' ? 'teamColorLeft' : 'teamColorRight')?.value || '#FFD700';
+      
+      const titleEl = document.getElementById('viewerTeamName');
+      titleEl.textContent = teamName;
+      titleEl.style.color = teamColor;
+      titleEl.style.textShadow = `0 0 10px ${teamColor}88`;
+      titleEl.style.borderColor = teamColor;
+      document.getElementById('viewerImage').style.borderColor = teamColor;
+      document.getElementById('viewerImage').style.boxShadow = `0 0 30px ${teamColor}88`;
+      
       openModal('viewerModal');
     } else {
       if (typeof isViewer !== 'undefined' && isViewer) return;

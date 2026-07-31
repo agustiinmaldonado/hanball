@@ -49,7 +49,7 @@
             <button class="btn btn-sm" style="font-size:10px; width:100%;" onclick="resetTeamColor('left')">&#8635; RESTABLECER</button>
           </div>
         </div>
-        <input id="teamNameLeft" class="team-name-input" value="LOCAL" maxlength="12" title="Nombre del equipo" />
+        <input id="teamNameLeft" class="team-name-input" value="LOCAL" maxlength="25" title="Nombre del equipo" />
         <div class="team-logo" id="logoLeft" title="Click para cambiar logo">LOGO</div>
       </div>
 
@@ -121,7 +121,7 @@
             <button class="btn btn-sm" style="font-size:10px; width:100%;" onclick="resetTeamColor('right')">&#8635; RESTABLECER</button>
           </div>
         </div>
-        <input id="teamNameRight" class="team-name-input" value="VISITANTE" maxlength="12"
+        <input id="teamNameRight" class="team-name-input" value="VISITANTE" maxlength="25"
           title="Nombre del equipo" style="text-align:right;" />
         <div class="team-logo" id="logoRight" title="Click para cambiar logo">LOGO</div>
       </div>
@@ -373,6 +373,7 @@
 <!-- Modal: Logo Viewer -->
 <div class="modal-overlay" id="viewerModal" onclick="if(event.target===this) closeModal('viewerModal')">
   <div class="modal" style="max-width:90vw; background:transparent; border:none; box-shadow:none; align-items:center;">
+    <div id="viewerTeamName" style="font-family:var(--font-led); font-size:clamp(16px, 4vw, 32px); color:var(--led-yellow); margin-bottom:12px; letter-spacing:2px; text-align:center; text-shadow:0 0 10px #FFD70088; width:100%; word-break:break-word;"></div>
     <img id="viewerImage" src="" style="max-width:100%; max-height:70vh; border-radius:12px; border:2px solid var(--led-yellow); box-shadow:0 0 30px #FFD70088; object-fit:contain;" />
     <div class="modal-actions" style="margin-top:10px; width:100%;">
       <button class="btn btn-main btn-green" onclick="openLogoPickerFromViewer()" style="flex:1;">CAMBIAR LOGO</button>
