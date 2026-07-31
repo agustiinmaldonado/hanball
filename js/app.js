@@ -704,17 +704,35 @@
     });
   }
 
+  function fillShareModal(ROOM_ID) {
+    document.getElementById('shareStatus').textContent = '✔ EN VIVO — sala: ' + ROOM_ID;
+    document.getElementById('shareStatus').style.color = '#00cc44';
+    const baseUrl = window.location.href.split('?')[0];
+    const shareUrl = `${baseUrl}?watch=${ROOM_ID}`;
+    document.getElementById('shareLinkInput').value = shareUrl;
+    const qrContainer = document.getElementById('qrcode');
+    qrContainer.innerHTML = '';
+    new QRCode(qrContainer, {
+      text: shareUrl, width: 160, height: 160,
+      colorDark: '#000000', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.L
+    });
+  }
+
   function initAdminNetwork() {
+    const ROOM_ID = 'handball-frias-live';
+    openModal('shareModal');
+
     if (peer && peer.open) {
-      openModal('shareModal');
+      // Already connected (silent init ran) — just fill the modal UI
+      fillShareModal(ROOM_ID);
       return;
     }
-    openModal('shareModal');
     document.getElementById('shareStatus').textContent = 'Conectando al servidor...';
     document.getElementById('shareStatus').style.color = 'var(--led-orange)';
 
     // ── ID de sala FIJA ──────────────────────────────────
-    const ROOM_ID = 'handball-frias-live';
+    // ROOM_ID already declared above
     // ─────────────────────────────────────────────────────
 
     if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
