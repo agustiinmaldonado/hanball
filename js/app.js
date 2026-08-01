@@ -683,6 +683,7 @@
   /* ── Keyboard shortcuts ── */
   document.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' || e.target.contentEditable === 'true') return;
+    if (isViewer) return;
     if (e.key === ' ') { e.preventDefault(); toggleTimer(); }
     // LOCAL: ↑ suma, ↓ resta
     else if (e.key === 'ArrowUp')    { e.preventDefault(); changeScore('left',  1); }
@@ -691,9 +692,20 @@
     else if (e.key === 'ArrowLeft')  { e.preventDefault(); changeScore('right',  1); }
     else if (e.key === 'ArrowRight') { e.preventDefault(); changeScore('right', -1); }
 
+    // P = pena LOCAL  |  Shift+P = pena VISITANTE
+    else if (e.key === 'p' || e.key === 'P') {
+      e.preventDefault();
+      addPenalty(e.shiftKey ? 'right' : 'left');
+    }
+    // T = tiempo muerto LOCAL  |  Shift+T = tiempo muerto VISITANTE
+    else if (e.key === 't' || e.key === 'T') {
+      e.preventDefault();
+      toggleTimeout(e.shiftKey ? 'right' : 'left');
+    }
+
     /* ── Botones de volumen (Android Chrome/Firefox) ── */
-    else if (e.key === 'AudioVolumeUp'   || e.keyCode === 175) { e.preventDefault(); if (!isViewer) changeScore('left',  1); }
-    else if (e.key === 'AudioVolumeDown' || e.keyCode === 174) { e.preventDefault(); if (!isViewer) changeScore('right', 1); }
+    else if (e.key === 'AudioVolumeUp'   || e.keyCode === 175) { e.preventDefault(); changeScore('left',  1); }
+    else if (e.key === 'AudioVolumeDown' || e.keyCode === 174) { e.preventDefault(); changeScore('right', 1); }
   });
 
   /* ── Helpers ── */
