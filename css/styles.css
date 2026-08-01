@@ -547,6 +547,11 @@ body {
   font-family: var(--font-led);
   letter-spacing: 4px;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
+  width: 5.5ch;
+  min-width: 5.5ch;
+  text-align: center;
+  display: block;
 }
 
 .timer-display.warning {
