@@ -1061,10 +1061,6 @@
       document.getElementById('teamNameLeft').value || 'LOCAL';
     document.getElementById(prefix + 'NameRight').textContent =
       document.getElementById('teamNameRight').value || 'VISITANTE';
-    document.getElementById(prefix + 'Period').textContent = `PERÍODO ${state.period}`;
-    const ht2 = state.period >= 2 ? `  |  2T: ${state.ht2Left} - ${state.ht2Right}` : '';
-    document.getElementById(prefix + 'Halftimes').textContent =
-      `1T: ${state.ht1Left} - ${state.ht1Right}${ht2}`;
 
     ['Left', 'Right'].forEach(side => {
       const src = document.getElementById('logo' + side);
