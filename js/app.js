@@ -462,10 +462,12 @@
   function captureWebcam() {
     const video = document.getElementById('webcamVideo');
     const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
-    const src = canvas.toDataURL('image/png');
+    const MAX = 160;
+    let w = video.videoWidth || 320, h = video.videoHeight || 240;
+    if (w > h) { h = Math.round(h * MAX / w); w = MAX; } else { w = Math.round(w * MAX / h); h = MAX; }
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+    const src = canvas.toDataURL('image/jpeg', 0.7);
     closeWebcamModal();
     setLogoImage(src);
   }
@@ -474,16 +476,34 @@
     document.getElementById('fileInputGallery').click();
   }
 
+  /* ── Compress a Data URI to max WxH at JPEG quality q ── */
+  function compressImage(src, maxPx, quality, cb) {
+    const img = new Image();
+    img.onload = function() {
+      let w = img.width, h = img.height;
+      if (w > maxPx || h > maxPx) {
+        if (w >= h) { h = Math.round(h * maxPx / w); w = maxPx; }
+        else        { w = Math.round(w * maxPx / h); h = maxPx; }
+      }
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      cb(c.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => cb(src); // fallback: use original
+    img.src = src;
+  }
+
   function handleFileInput(file) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = e => {
-      const src = e.target.result;
-      const prev = document.getElementById('logoPreview');
-      prev.src = src;
-      prev.classList.add('visible');
-      // auto-apply after short preview
-      setTimeout(() => setLogoImage(src), 600);
+      compressImage(e.target.result, 160, 0.72, (compressed) => {
+        const prev = document.getElementById('logoPreview');
+        prev.src = compressed;
+        prev.classList.add('visible');
+        setTimeout(() => setLogoImage(compressed), 600);
+      });
     };
     reader.readAsDataURL(file);
   }
@@ -793,6 +813,12 @@
   function initViewer(watchId) {
     let retryCount = 0;
     const MAX_RETRIES = 20;
+    let noDataTimer = null;
+    const NO_DATA_TIMEOUT = 7000; // 7 seconds without data = show offline msg
+
+    function showOffline() {
+      setStatus('📡 SIN TRANSMISIÓN — No hay partido en curso');
+    }
 
     function applyData(d) {
       // Aplicar todos los campos del estado recibido directamente
@@ -863,16 +889,23 @@
         realtimeChannel
           .on('broadcast', { event: 'match_state' }, (payload) => {
             retryCount = 0;
+            clearTimeout(noDataTimer);
             setStatus('🔴 TRANSMISIÓN EN VIVO');
             applyData(payload.payload);
+            // Reset offline timer: if no data arrives in 7s show offline msg
+            noDataTimer = setTimeout(showOffline, NO_DATA_TIMEOUT);
           })
           .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
               setStatus('🔴 CONECTADO - ESPERANDO DATOS');
+              // Start offline timer immediately on connect
+              noDataTimer = setTimeout(showOffline, NO_DATA_TIMEOUT);
             } else if (status === 'CLOSED') {
+              clearTimeout(noDataTimer);
               setStatus('SIN SEÑAL — reconectando...');
               scheduleReconnect();
             } else if (status === 'CHANNEL_ERROR') {
+              clearTimeout(noDataTimer);
               setStatus('ERROR DE CONEXIÓN — reintentando...');
               scheduleReconnect();
             }
