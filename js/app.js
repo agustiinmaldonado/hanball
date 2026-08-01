@@ -274,10 +274,24 @@ function setArrow(side) {
 
 /* ── Penalties ── */
 function addPenalty(side) {
-  state.penalties[side].push({ id: Date.now(), seconds: 120, running: false, player: '??' });
+  const id = Date.now();
+  state.penalties[side].push({ id, seconds: 120, running: false, player: '??' });
   const team = side === 'left' ? document.getElementById('teamNameLeft').value : document.getElementById('teamNameRight').value;
   logEvent(`PENAL AGREGADO - ${team}`);
   renderPenalties(side);
+
+  // Auto-focus on the player number input
+  setTimeout(() => {
+    const el = document.getElementById('penNum-' + id);
+    if (el) {
+      el.focus();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  }, 50);
 }
 
 function removePenalty(side, id) {
@@ -347,7 +361,7 @@ function renderPenalties(side) {
     const row = document.createElement('div');
     row.className = 'penalty-row';
     row.innerHTML = `
-        <span class="penalty-num" contenteditable="true"
+        <span class="penalty-num" contenteditable="true" id="penNum-${pen.id}"
           onblur="updatePlayer('${side}',${pen.id},this.textContent.trim())"
           title="Número jugador">${pen.player}</span>
         <span class="penalty-timer-display ${pen.running ? 'running' : ''}"
