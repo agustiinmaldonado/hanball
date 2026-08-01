@@ -260,7 +260,7 @@ body {
 }
 
 .score-number {
-  font-size: clamp(52px, 10vw, 104px);
+  font-size: clamp(82px, 15vw, 160px);
   font-weight: 900;
   color: var(--led-yellow);
   text-shadow: var(--shadow-led);
@@ -540,7 +540,7 @@ body {
 }
 
 .timer-display {
-  font-size: clamp(52px, 10vw, 104px);
+  font-size: clamp(82px, 15vw, 160px);
   font-weight: 900;
   color: var(--led-yellow);
   text-shadow: var(--shadow-led);
