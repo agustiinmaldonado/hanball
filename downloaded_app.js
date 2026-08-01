@@ -58,11 +58,11 @@
       document.getElementById('scoreLeft').textContent  = pad2(state.scoreLeft);
       document.getElementById('scoreRight').textContent = pad2(state.scoreRight);
       document.getElementById('periodNum').textContent  = state.period;
-      if (document.getElementById('ht1Left')) document.getElementById('ht1Left').textContent = state.ht1Left;
-      if (document.getElementById('ht1Right')) document.getElementById('ht1Right').textContent = state.ht1Right;
-      if (document.getElementById('ht2Left')) document.getElementById('ht2Left').textContent = state.ht2Left;
-      if (document.getElementById('ht2Right')) document.getElementById('ht2Right').textContent = state.ht2Right;
-      if (document.getElementById('ht2Block')) document.getElementById('ht2Block').style.display = state.period >= 2 ? '' : 'none';
+      document.getElementById('ht1Left').textContent    = state.ht1Left;
+      document.getElementById('ht1Right').textContent   = state.ht1Right;
+      document.getElementById('ht2Left').textContent    = state.ht2Left;
+      document.getElementById('ht2Right').textContent   = state.ht2Right;
+      document.getElementById('ht2Block').style.display = state.period >= 2 ? '' : 'none';
       setArrow(state.arrow);
       renderTimer();
       renderPenalties('left');
@@ -252,14 +252,14 @@
   function saveHalftime() {
     if (state.period === 1) {
       state.ht1Left = state.scoreLeft; state.ht1Right = state.scoreRight;
-      if (document.getElementById('ht1Left')) document.getElementById('ht1Left').textContent = state.ht1Left;
-      if (document.getElementById('ht1Right')) document.getElementById('ht1Right').textContent = state.ht1Right;
+      document.getElementById('ht1Left').textContent = state.ht1Left;
+      document.getElementById('ht1Right').textContent = state.ht1Right;
       setStatus('PARCIAL 1° GUARDADO');
     } else {
       state.ht2Left = state.scoreLeft; state.ht2Right = state.scoreRight;
-      if (document.getElementById('ht2Left')) document.getElementById('ht2Left').textContent = state.ht2Left;
-      if (document.getElementById('ht2Right')) document.getElementById('ht2Right').textContent = state.ht2Right;
-      if (document.getElementById('ht2Block')) document.getElementById('ht2Block').style.display = '';
+      document.getElementById('ht2Left').textContent = state.ht2Left;
+      document.getElementById('ht2Right').textContent = state.ht2Right;
+      document.getElementById('ht2Block').style.display = '';
       setStatus('PARCIAL 2° GUARDADO');
     }
   }
@@ -570,11 +570,8 @@
     // Reset score UI
     ['scoreLeft','scoreRight'].forEach(id => document.getElementById(id).textContent = '00');
     document.getElementById('periodNum').textContent = '1';
-    ['ht1Left','ht1Right'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = '0';
-    });
-    if (document.getElementById('ht2Block')) document.getElementById('ht2Block').style.display = 'none';
+    ['ht1Left','ht1Right'].forEach(id => document.getElementById(id).textContent = '0');
+    document.getElementById('ht2Block').style.display = 'none';
     document.getElementById('penaltiesLeft').innerHTML = '';
     document.getElementById('penaltiesRight').innerHTML = '';
 
@@ -634,7 +631,7 @@
   /* ── Networking (Supabase Realtime) ── */
   const SUPABASE_URL = 'https://jwdqjfvvgpjdaobkrphx.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_m1fsgAiavkgIMavKhLmUXQ_-FeIFgaN';
-  let supabaseClient = null;
+  let supabase = null;
   let realtimeChannel = null;
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -694,15 +691,15 @@
   /* ───── ADMIN ───── */
 
   function startAdminPeer(showModal) {
-    if (supabaseClient && realtimeChannel) {
+    if (supabase && realtimeChannel) {
       // Supabase already initialized — show modal if requested
       if (showModal) { openModal('shareModal'); fillShareModal(); }
       return;
     }
 
     try {
-      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      realtimeChannel = supabaseClient.channel(ROOM_ID, {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      realtimeChannel = supabase.channel(ROOM_ID, {
         config: {
           broadcast: { self: false }
         }
@@ -741,7 +738,7 @@
 
   function initAdminNetwork() {
     openModal('shareModal');
-    if (supabaseClient && realtimeChannel) { fillShareModal(); return; }
+    if (supabase && realtimeChannel) { fillShareModal(); return; }
     document.getElementById('shareStatus').textContent = 'Conectando al servidor...';
     document.getElementById('shareStatus').style.color = 'var(--led-orange)';
     startAdminPeer(true);
@@ -754,7 +751,7 @@
   }
 
   function broadcastState() {
-    if (isViewer || !supabaseClient || !realtimeChannel) return;
+    if (isViewer || !supabase || !realtimeChannel) return;
     const s = state;
     const payload = {
       timerSeconds:  s.timerSeconds,
@@ -825,11 +822,11 @@
 
       // Período
       document.getElementById('periodNum').textContent  = state.period;
-      if (document.getElementById('ht1Left')) document.getElementById('ht1Left').textContent = state.ht1Left;
-      if (document.getElementById('ht1Right')) document.getElementById('ht1Right').textContent = state.ht1Right;
-      if (document.getElementById('ht2Left')) document.getElementById('ht2Left').textContent = state.ht2Left;
-      if (document.getElementById('ht2Right')) document.getElementById('ht2Right').textContent = state.ht2Right;
-      if (document.getElementById('ht2Block')) document.getElementById('ht2Block').style.display = state.period >= 2 ? '' : 'none';
+      document.getElementById('ht1Left').textContent    = state.ht1Left;
+      document.getElementById('ht1Right').textContent   = state.ht1Right;
+      document.getElementById('ht2Left').textContent    = state.ht2Left;
+      document.getElementById('ht2Right').textContent   = state.ht2Right;
+      document.getElementById('ht2Block').style.display = state.period >= 2 ? '' : 'none';
 
       // Flecha y cronómetro
       setArrow(state.arrow);
@@ -853,8 +850,8 @@
 
     function connectToSupabase() {
       try {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        realtimeChannel = supabaseClient.channel(watchId, {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        realtimeChannel = supabase.channel(watchId, {
           config: {
             broadcast: { ack: false }
           }
