@@ -201,7 +201,7 @@
     }
 
     .score-number {
-      font-size: clamp(52px, 10vw, 104px);
+      font-size: clamp(70px, 13vw, 140px);
       font-weight: 900;
       color: var(--led-yellow);
       text-shadow: var(--shadow-led);
