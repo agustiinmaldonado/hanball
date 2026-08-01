@@ -359,7 +359,8 @@
 
     /* ── Center Panel ── */
     .center-panel {
-      width: clamp(170px, 22vw, 250px);
+      min-width: clamp(200px, 25vw, 340px);
+      width: auto;
       display: flex; flex-direction: column; gap: 5px;
     }
 
