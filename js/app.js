@@ -560,11 +560,53 @@
 
   /* ── Game ── */
   function startGame() {
-    showConfirm('¿Iniciar nuevo partido?\nSe resetearán todos los datos.', fullReset);
+    showConfirm('¿Iniciar nuevo partido?\nSe resetearán TODOS los datos y equipos (nombres, logos, colores).', fullReset);
   }
 
   function confirmReset() {
-    showConfirm('¿Resetear todo el marcador?', fullReset);
+    showConfirm('¿Resetear marcador y tiempos?\nSe pondrá todo en 0, pero se CONSERVARÁN los equipos actuales (nombres, logos y colores).', softReset);
+  }
+
+  function softReset() {
+    pauseTimer();
+    
+    // Reset periodMinutes to default 30 so the timer restores to 30:00
+    state.periodMinutes = 30;
+    
+    Object.assign(state, {
+      scoreLeft:0, scoreRight:0, period:1,
+      timerSeconds: 30 * 60,
+      timerRunning: false,
+      ht1Left:0, ht1Right:0, ht2Left:0, ht2Right:0,
+      penalties: { left:[], right:[] }, arrow:'none',
+      events: [],
+      timeout: { left: { seconds:60, running:false }, right: { seconds:60, running:false } }
+    });
+    
+    // Reset score UI (do not reset logos/colors)
+    ['scoreLeft','scoreRight'].forEach(id => document.getElementById(id).textContent = '00');
+    document.getElementById('periodNum').textContent = '1';
+    ['ht1Left','ht1Right'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '0';
+    });
+    if (document.getElementById('ht2Block')) document.getElementById('ht2Block').style.display = 'none';
+    document.getElementById('penaltiesLeft').innerHTML = '';
+    document.getElementById('penaltiesRight').innerHTML = '';
+
+    // Reset timer display properly (removes warning class too)
+    document.getElementById('mainTimer').classList.remove('warning');
+    document.getElementById('btnTimerStart').textContent = '▶ INICIAR';
+    document.getElementById('btnTimerStart').classList.add('btn-green');
+    document.getElementById('btnTimerStart').classList.remove('btn-red');
+    
+    setArrow('none');
+    renderTimer();
+    renderTimeout('left');
+    renderTimeout('right');
+    setStatus('MARCADOR REINICIADO');
+    saveState();
+    broadcastState();
   }
 
   function fullReset() {
