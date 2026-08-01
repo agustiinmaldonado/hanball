@@ -651,15 +651,9 @@
 
     initViewer(watchId);
   } else {
-    // Restore session: if already authenticated in this browser session, skip login
     if (sessionStorage.getItem('handball_admin') === 'true') {
       document.getElementById('loginOverlay').style.display = 'none';
-      // Restore match state from localStorage
-      if (loadState()) {
-        setStatus('PARTIDO RESTAURADO');
-      }
-      // Auto-connect network so spectators can connect immediately
-      setTimeout(initAdminNetworkSilent, 500);
+      if (loadState()) { setStatus('PARTIDO RESTAURADO'); }
     } else {
       document.getElementById('loginPin').focus();
     }
@@ -669,12 +663,7 @@
     if (document.getElementById('loginPin').value === 'ATM2019') {
       document.getElementById('loginOverlay').style.display = 'none';
       sessionStorage.setItem('handball_admin', 'true');
-      // Restore any saved match
-      if (loadState()) {
-        setStatus('PARTIDO RESTAURADO');
-      }
-      // Auto-connect network
-      setTimeout(initAdminNetworkSilent, 500);
+      if (loadState()) { setStatus('PARTIDO RESTAURADO'); }
     } else {
       const err = document.getElementById('loginError');
       err.style.display = 'block';
@@ -683,32 +672,64 @@
     }
   }
 
-  // Silently start broadcasting in background (no modal)
-  function initAdminNetworkSilent() {
-    if (peer && peer.open) return; // already connected
-    const ROOM_ID = 'handball-frias-live';
+  /* ─────────────────────────────────────────────────────────────────
+     NETWORKING  –  PeerJS
+     Admin: crea peer con ID fijo, emite estado cada segundo.
+     Viewer: se conecta al ID fijo, sólo muestra lo que recibe.
+  ───────────────────────────────────────────────────────────────── */
+  const ROOM_ID = 'handball-frias-live';
+  let broadcastInterval = null; // único intervalo de difusión
+
+  /* ── ADMIN ── */
+  function startAdminPeer(showModal) {
+    // Si ya está abierto, sólo actualizará el modal si se pidió
+    if (peer && peer.open) {
+      if (showModal) { openModal('shareModal'); fillShareModal(); }
+      return;
+    }
+    // Destruir peer anterior si existe
     if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+
     peer = new Peer(ROOM_ID);
+
     peer.on('open', () => {
-      setInterval(broadcastState, 1000);
+      // Un único intervalo de broadcast – detener cualquier previo
+      clearInterval(broadcastInterval);
+      broadcastInterval = setInterval(broadcastState, 1000);
+      if (showModal) { openModal('shareModal'); fillShareModal(); }
     });
+
     peer.on('connection', (conn) => {
       connections.push(conn);
+      // Enviar estado completo al nuevo espectador en cuanto abre
       conn.on('open', () => broadcastState());
       conn.on('close', () => { connections = connections.filter(c => c !== conn); });
     });
+
     peer.on('error', (err) => {
-      if (err.type !== 'unavailable-id') {
-        setTimeout(initAdminNetworkSilent, 5000); // retry on error
+      clearInterval(broadcastInterval);
+      peer = null;
+      if (err.type === 'unavailable-id') {
+        // Otro dispositivo ya tiene este ID – reintentar en 5 s
+        if (showModal) {
+          document.getElementById('shareStatus').textContent = '⚠ Sala ocupada. Reintentando...';
+          document.getElementById('shareStatus').style.color = 'var(--led-orange)';
+        }
+        setTimeout(() => startAdminPeer(showModal), 5000);
+      } else {
+        if (showModal) {
+          document.getElementById('shareStatus').textContent = 'Error: ' + (err.message || err.type);
+          document.getElementById('shareStatus').style.color = 'var(--led-red)';
+        }
+        setTimeout(() => startAdminPeer(false), 8000); // reconectar silencioso
       }
     });
   }
 
-  function fillShareModal(ROOM_ID) {
+  function fillShareModal() {
+    const shareUrl = window.location.href.split('?')[0] + '?watch=' + ROOM_ID;
     document.getElementById('shareStatus').textContent = '✔ EN VIVO — sala: ' + ROOM_ID;
     document.getElementById('shareStatus').style.color = '#00cc44';
-    const baseUrl = window.location.href.split('?')[0];
-    const shareUrl = `${baseUrl}?watch=${ROOM_ID}`;
     document.getElementById('shareLinkInput').value = shareUrl;
     const qrContainer = document.getElementById('qrcode');
     qrContainer.innerHTML = '';
@@ -719,65 +740,12 @@
     });
   }
 
+  // Llamado desde el botón COMPARTIR
   function initAdminNetwork() {
-    const ROOM_ID = 'handball-frias-live';
     openModal('shareModal');
-
-    if (peer && peer.open) {
-      // Already connected (silent init ran) — just fill the modal UI
-      fillShareModal(ROOM_ID);
-      return;
-    }
     document.getElementById('shareStatus').textContent = 'Conectando al servidor...';
     document.getElementById('shareStatus').style.color = 'var(--led-orange)';
-
-    // ── ID de sala FIJA ──────────────────────────────────
-    // ROOM_ID already declared above
-    // ─────────────────────────────────────────────────────
-
-    if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
-    peer = new Peer(ROOM_ID);
-
-    peer.on('open', (id) => {
-      document.getElementById('shareStatus').textContent = '✔ EN VIVO — sala: ' + ROOM_ID;
-      document.getElementById('shareStatus').style.color = '#00cc44';
-
-      const baseUrl = window.location.href.split('?')[0];
-      const shareUrl = `${baseUrl}?watch=${ROOM_ID}`;
-      document.getElementById('shareLinkInput').value = shareUrl;
-
-      // Generate QR Code
-      const qrContainer = document.getElementById('qrcode');
-      qrContainer.innerHTML = '';
-      new QRCode(qrContainer, {
-        text: shareUrl,
-        width: 160,
-        height: 160,
-        colorDark : "#000000",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.L
-      });
-
-      setInterval(broadcastState, 1000);
-    });
-
-    peer.on('connection', (conn) => {
-      connections.push(conn);
-      conn.on('open', () => broadcastState());
-      conn.on('close', () => { connections = connections.filter(c => c !== conn); });
-    });
-
-    peer.on('error', (err) => {
-      if (err.type === 'unavailable-id') {
-        // ID taken means another tab/device is already broadcasting with this ID
-        document.getElementById('shareStatus').textContent = '⚠ Sala ocupada — ya hay una transmisión activa en otro dispositivo.';
-        document.getElementById('shareStatus').style.color = 'var(--led-orange)';
-      } else {
-        document.getElementById('shareStatus').textContent = 'Error de red: ' + (err.message || err.type);
-        document.getElementById('shareStatus').style.color = 'var(--led-red)';
-      }
-      peer = null;
-    });
+    startAdminPeer(true);
   }
 
   function copyShareLink() {
@@ -790,97 +758,41 @@
   function broadcastState() {
     if (isViewer || connections.length === 0) return;
     const payload = {
-      state: state,
+      state: JSON.parse(JSON.stringify(state)), // copia limpia sin referencias
       tournamentName: document.getElementById('tournamentName').value,
-      teamNameLeft: document.getElementById('teamNameLeft').value,
-      teamNameRight: document.getElementById('teamNameRight').value,
-      teamColorLeft: document.getElementById('teamColorLeft').value,
+      teamNameLeft:   document.getElementById('teamNameLeft').value,
+      teamNameRight:  document.getElementById('teamNameRight').value,
+      teamColorLeft:  document.getElementById('teamColorLeft').value,
       teamColorRight: document.getElementById('teamColorRight').value,
-      logoLeftHtml: document.getElementById('logoLeft').innerHTML,
-      logoRightHtml: document.getElementById('logoRight').innerHTML
+      logoLeftHtml:   document.getElementById('logoLeft').innerHTML,
+      logoRightHtml:  document.getElementById('logoRight').innerHTML,
     };
     connections.forEach(conn => { if (conn.open) conn.send(payload); });
   }
 
-  document.addEventListener('click', () => {
-    if (!isViewer) {
-      setTimeout(broadcastState, 50);
-      setTimeout(saveState, 100);
-    }
-  });
-  document.addEventListener('keyup', () => {
-    if (!isViewer) {
-      setTimeout(broadcastState, 50);
-      setTimeout(saveState, 100);
-    }
-  });
-  // Also auto-save every 5 seconds while the timer is running
+  document.addEventListener('click', () => { if (!isViewer) { setTimeout(broadcastState, 50); setTimeout(saveState, 100); } });
+  document.addEventListener('keyup',  () => { if (!isViewer) { setTimeout(broadcastState, 50); setTimeout(saveState, 100); } });
   setInterval(() => { if (!isViewer && state.timerRunning) saveState(); }, 5000);
 
+  /* ── VIEWER ── */
   function initViewer(watchId) {
-    let viewerTimerInterval = null;
-    let viewerTimeoutIntervals = { left: null, right: null };
     let retryCount = 0;
-    const MAX_RETRIES = 5;
+    const MAX_RETRIES = 10;
+    let currentConn = null;
 
-    function startViewerTimer() {
-      clearInterval(viewerTimerInterval);
-      if (!state.timerRunning) return;
-      viewerTimerInterval = setInterval(() => {
-        if (state.timerRunning && state.timerSeconds > 0) {
-          state.timerSeconds--;
-          renderTimer();
-        } else if (state.timerSeconds <= 0) {
-          clearInterval(viewerTimerInterval);
-        }
-      }, 1000);
-    }
-
-    function startViewerTimeouts() {
-      ['left', 'right'].forEach(side => {
-        clearInterval(viewerTimeoutIntervals[side]);
-        if (!state.timeout[side].running) return;
-        viewerTimeoutIntervals[side] = setInterval(() => {
-          if (state.timeout[side].running && state.timeout[side].seconds > 0) {
-            state.timeout[side].seconds--;
-            renderTimeoutViewer(side);
-          } else {
-            clearInterval(viewerTimeoutIntervals[side]);
-          }
-        }, 1000);
-      });
-    }
-
-    function renderTimeoutViewer(side) {
-      const t = state.timeout[side];
-      const cap = side.charAt(0).toUpperCase() + side.slice(1);
-      const timerEl = document.getElementById('timeout' + cap);
-      if (!timerEl) return;
-      const m = Math.floor(t.seconds / 60), s = t.seconds % 60;
-      timerEl.textContent = `${pad2(m)}:${pad2(s)}`;
-      if (t.running) {
-        timerEl.classList.add('running');
-      } else {
-        timerEl.classList.remove('running');
-      }
-    }
-
-    function applyReceivedData(data) {
-      // Stop local timers — we'll re-sync from received state
-      clearInterval(viewerTimerInterval);
-      clearInterval(viewerTimeoutIntervals.left);
-      clearInterval(viewerTimeoutIntervals.right);
-
+    function applyState(data) {
+      // El espectador es receptor puro: copia el estado del admin y renderiza
       Object.assign(state, data.state);
-      document.getElementById('tournamentName').value = data.tournamentName;
-      document.getElementById('teamNameLeft').value   = data.teamNameLeft;
-      document.getElementById('teamNameRight').value  = data.teamNameRight;
-      document.getElementById('teamColorLeft').value  = data.teamColorLeft;
-      document.getElementById('teamColorRight').value = data.teamColorRight;
+
+      document.getElementById('tournamentName').value  = data.tournamentName;
+      document.getElementById('teamNameLeft').value    = data.teamNameLeft;
+      document.getElementById('teamNameRight').value   = data.teamNameRight;
+      document.getElementById('teamColorLeft').value   = data.teamColorLeft;
+      document.getElementById('teamColorRight').value  = data.teamColorRight;
       updateTeamColor('left',  data.teamColorLeft);
       updateTeamColor('right', data.teamColorRight);
-      document.getElementById('logoLeft').innerHTML  = data.logoLeftHtml;
-      document.getElementById('logoRight').innerHTML = data.logoRightHtml;
+      document.getElementById('logoLeft').innerHTML    = data.logoLeftHtml;
+      document.getElementById('logoRight').innerHTML   = data.logoRightHtml;
 
       document.getElementById('scoreLeft').textContent  = pad2(state.scoreLeft);
       document.getElementById('scoreRight').textContent = pad2(state.scoreRight);
@@ -895,63 +807,64 @@
       renderTimer();
       renderPenalties('left');
       renderPenalties('right');
-      renderTimeoutViewer('left');
-      renderTimeoutViewer('right');
 
-      // Restart local timers to keep ticking smoothly between packets
-      startViewerTimer();
-      startViewerTimeouts();
+      // Tiempo muerto: solo actualizar display (sin btn)
+      ['left', 'right'].forEach(side => {
+        const cap = side.charAt(0).toUpperCase() + side.slice(1);
+        const el = document.getElementById('timeout' + cap);
+        if (!el) return;
+        const t = state.timeout[side];
+        const m = Math.floor(t.seconds / 60), s = t.seconds % 60;
+        el.textContent = pad2(m) + ':' + pad2(s);
+        el.classList.toggle('running', !!t.running);
+      });
     }
 
-    function connect() {
-      if (!peer || peer.destroyed) {
-        peer = new Peer();
-      }
-      peer.on('open', () => {
-        setStatus('CONECTANDO...');
-        const conn = peer.connect(watchId, { reliable: true });
+    function connectToPeer() {
+      // Crear peer viewer con ID aleatorio
+      if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+      peer = new Peer(); // sin ID – el viewer no necesita ID fijo
 
-        conn.on('open', () => {
+      peer.on('open', () => {
+        setStatus('CONECTANDO AL OPERADOR...');
+        currentConn = peer.connect(watchId, { reliable: true, serialization: 'json' });
+
+        currentConn.on('open', () => {
           retryCount = 0;
           setStatus('🔴 TRANSMISIÓN EN VIVO');
         });
 
-        conn.on('data', (data) => { applyReceivedData(data); });
-
-        conn.on('close', () => {
-          clearInterval(viewerTimerInterval);
-          setStatus('DESCONECTADO — reconectando...');
-          if (retryCount < MAX_RETRIES) {
-            retryCount++;
-            setTimeout(connect, 3000);
-          } else {
-            setStatus('SIN CONEXIÓN CON EL OPERADOR');
-          }
+        currentConn.on('data', (data) => {
+          applyState(data);
         });
 
-        conn.on('error', () => {
-          setStatus('ERROR — reintentando...');
-          if (retryCount < MAX_RETRIES) {
-            retryCount++;
-            setTimeout(connect, 3000);
-          }
+        currentConn.on('close', () => {
+          setStatus('SIN SEÑAL — reconectando...');
+          scheduleReconnect();
+        });
+
+        currentConn.on('error', () => {
+          setStatus('ERROR — reconectando...');
+          scheduleReconnect();
         });
       });
 
-      peer.on('error', (err) => {
-        setStatus('ERROR DE CONEXIÓN — reintentando...');
-        if (retryCount < MAX_RETRIES) {
-          retryCount++;
-          setTimeout(() => {
-            try { peer.destroy(); } catch(e) {}
-            peer = null;
-            connect();
-          }, 3000);
-        }
+      peer.on('error', () => {
+        setStatus('ERROR DE RED — reintentando...');
+        scheduleReconnect();
       });
     }
 
-    connect();
+    function scheduleReconnect() {
+      if (retryCount >= MAX_RETRIES) {
+        setStatus('SIN CONEXIÓN CON EL OPERADOR');
+        return;
+      }
+      retryCount++;
+      setTimeout(connectToPeer, 3000);
+    }
+
+    connectToPeer();
   }
 
   /* ── Result Generator ── */
