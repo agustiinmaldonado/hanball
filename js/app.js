@@ -199,6 +199,7 @@
     const el = document.getElementById('mainTimer');
     el.classList.add('warning');
     setTimeout(() => el.classList.remove('warning'), 6000);
+    playPenaltyAlert('center');
   }
 
   function renderTimer() {
@@ -322,11 +323,19 @@
       osc.stop(audioCtx.currentTime + 0.5);
     } catch (e) { console.log('Audio no soportado o bloqueado', e); }
 
-    // Alerta visual: Parpadeo verde en el panel del equipo
-    const panelId = side === 'left' ? 'teamPanelLeft' : 'teamPanelRight';
-    const panel = document.getElementById(panelId) || document.body;
-    panel.classList.add('flash-green');
-    setTimeout(() => panel.classList.remove('flash-green'), 1000);
+    // Alerta visual: Parpadeo verde en el panel del equipo o centro
+    if (side === 'center') {
+      const el = document.getElementById('mainTimer');
+      if (el) {
+        el.classList.add('flash-green');
+        setTimeout(() => el.classList.remove('flash-green'), 1000);
+      }
+    } else {
+      const panelId = side === 'left' ? 'teamPanelLeft' : 'teamPanelRight';
+      const panel = document.getElementById(panelId) || document.body;
+      panel.classList.add('flash-green');
+      setTimeout(() => panel.classList.remove('flash-green'), 1000);
+    }
   }
 
   function renderPenalties(side) {
@@ -816,11 +825,40 @@
     let noDataTimer = null;
     const NO_DATA_TIMEOUT = 7000; // 7 seconds without data = show offline msg
 
+    let prevTimer = null;
+    let prevTimeouts = { left: null, right: null };
+    let prevPenalties = { left: [], right: [] };
+
     function showOffline() {
       setStatus('📡 SIN TRANSMISIÓN — No hay partido en curso');
     }
 
     function applyData(d) {
+      // Check for zero-crossings to play buzzer on spectator view
+      if (prevTimer !== null && prevTimer > 0 && d.timerSeconds === 0 && !d.timerRunning) {
+        playPenaltyAlert('center');
+      }
+      prevTimer = d.timerSeconds;
+
+      ['left', 'right'].forEach(side => {
+        // Timeouts
+        const oldT = prevTimeouts[side];
+        const curT = d.timeout[side];
+        if (oldT !== null && oldT > 0 && curT.seconds === 0 && !curT.running) {
+          playPenaltyAlert(side);
+        }
+        prevTimeouts[side] = curT.seconds;
+
+        // Penalties
+        d.penalties[side].forEach(pen => {
+          const oldPen = prevPenalties[side].find(op => op.id === pen.id);
+          if (oldPen && oldPen.seconds > 0 && pen.seconds === 0) {
+            playPenaltyAlert(side);
+          }
+        });
+        prevPenalties[side] = d.penalties[side].map(p => ({ id: p.id, seconds: p.seconds }));
+      });
+
       // Aplicar todos los campos del estado recibido directamente
       state.timerSeconds  = d.timerSeconds;
       state.timerRunning  = d.timerRunning;
