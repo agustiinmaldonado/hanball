@@ -276,12 +276,12 @@
 
     .penalty-num {
       font-family: var(--font-mono);
-      font-size: clamp(18px, 2.5vw, 26px);
+      font-size: clamp(26px, 3.5vw, 38px);
       font-weight: 700;
       color: var(--led-yellow); text-shadow: 0 0 8px #FFD700bb;
-      width: 48px; text-align: center;
+      width: 64px; text-align: center;
       background: var(--bg-panel); border: 1px solid #555;
-      border-radius: 4px; padding: 4px 6px;
+      border-radius: 4px; padding: 6px 6px;
       cursor: text;
       letter-spacing: 1px;
     }
