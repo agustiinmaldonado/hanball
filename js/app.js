@@ -631,7 +631,7 @@
   /* ── Networking (Supabase Realtime) ── */
   const SUPABASE_URL = 'https://jwdqjfvvgpjdaobkrphx.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_m1fsgAiavkgIMavKhLmUXQ_-FeIFgaN';
-  let supabase = null;
+  let supabaseClient = null;
   let realtimeChannel = null;
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -691,15 +691,15 @@
   /* ───── ADMIN ───── */
 
   function startAdminPeer(showModal) {
-    if (supabase && realtimeChannel) {
+    if (supabaseClient && realtimeChannel) {
       // Supabase already initialized — show modal if requested
       if (showModal) { openModal('shareModal'); fillShareModal(); }
       return;
     }
 
     try {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      realtimeChannel = supabase.channel(ROOM_ID, {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      realtimeChannel = supabaseClient.channel(ROOM_ID, {
         config: {
           broadcast: { self: false }
         }
@@ -738,7 +738,7 @@
 
   function initAdminNetwork() {
     openModal('shareModal');
-    if (supabase && realtimeChannel) { fillShareModal(); return; }
+    if (supabaseClient && realtimeChannel) { fillShareModal(); return; }
     document.getElementById('shareStatus').textContent = 'Conectando al servidor...';
     document.getElementById('shareStatus').style.color = 'var(--led-orange)';
     startAdminPeer(true);
@@ -751,7 +751,7 @@
   }
 
   function broadcastState() {
-    if (isViewer || !supabase || !realtimeChannel) return;
+    if (isViewer || !supabaseClient || !realtimeChannel) return;
     const s = state;
     const payload = {
       timerSeconds:  s.timerSeconds,
@@ -850,8 +850,8 @@
 
     function connectToSupabase() {
       try {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        realtimeChannel = supabase.channel(watchId, {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        realtimeChannel = supabaseClient.channel(watchId, {
           config: {
             broadcast: { ack: false }
           }
