@@ -750,18 +750,54 @@
     }
   }
 
-  function checkLogin() {
-    if (document.getElementById('loginPin').value === 'ATM2019') {
+  async function checkLogin() {
+    // --- Lockout check ---
+    const LOCKOUT_KEY = 'handball_lockout';
+    const ATTEMPTS_KEY = 'handball_attempts';
+    const MAX_ATTEMPTS = 5;
+    const LOCKOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+    const lockoutUntil = parseInt(localStorage.getItem(LOCKOUT_KEY) || '0');
+    if (Date.now() < lockoutUntil) {
+      const remaining = Math.ceil((lockoutUntil - Date.now()) / 1000);
+      const err = document.getElementById('loginError');
+      err.textContent = `Demasiados intentos. Esperá ${remaining} seg.`;
+      err.style.display = 'block';
+      setTimeout(() => { err.style.display = 'none'; err.textContent = 'Contraseña incorrecta'; }, 3000);
+      return;
+    }
+
+    // --- Hash the entered password and compare ---
+    const CORRECT_HASH = '1a4238a50ca1f59987255be338305b87a74a86d2e526138b7b7ed3215408b782';
+    const input = document.getElementById('loginPin').value;
+    const encoded = new TextEncoder().encode(input);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    if (hashHex === CORRECT_HASH) {
+      // Success — clear attempts and unlock
+      localStorage.removeItem(ATTEMPTS_KEY);
+      localStorage.removeItem(LOCKOUT_KEY);
       document.getElementById('loginOverlay').style.display = 'none';
       sessionStorage.setItem('handball_admin', 'true');
       if (loadState()) { setStatus('PARTIDO RESTAURADO'); }
-      // Iniciar peer automáticamente al hacer login
       setTimeout(() => startAdminPeer(false), 300);
     } else {
+      // Failed attempt
+      const attempts = parseInt(localStorage.getItem(ATTEMPTS_KEY) || '0') + 1;
+      localStorage.setItem(ATTEMPTS_KEY, attempts);
       const err = document.getElementById('loginError');
-      err.style.display = 'block';
       document.getElementById('loginPin').value = '';
-      setTimeout(() => err.style.display = 'none', 2000);
+      if (attempts >= MAX_ATTEMPTS) {
+        localStorage.setItem(LOCKOUT_KEY, Date.now() + LOCKOUT_MS);
+        localStorage.removeItem(ATTEMPTS_KEY);
+        err.textContent = 'Demasiados intentos. Bloqueado por 5 minutos.';
+      } else {
+        err.textContent = `Contraseña incorrecta (${attempts}/${MAX_ATTEMPTS} intentos)`;
+      }
+      err.style.display = 'block';
+      setTimeout(() => { err.style.display = 'none'; err.textContent = 'Contraseña incorrecta'; }, 3000);
     }
   }
 
