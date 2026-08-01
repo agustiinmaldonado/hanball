@@ -1022,15 +1022,6 @@
     document.getElementById('rcNameRight').textContent =
       document.getElementById('teamNameRight').value || 'VISITANTE';
 
-    // Period info
-    document.getElementById('rcPeriod').textContent = `PERÍODO ${state.period}`;
-
-    // Halftime scores
-    const ht2 = state.period >= 2
-      ? `  |  2T: ${state.ht2Left} - ${state.ht2Right}` : '';
-    document.getElementById('rcHalftimes').textContent =
-      `1T: ${state.ht1Left} - ${state.ht1Right}${ht2}`;
-
     // Copy logos
     ['Left', 'Right'].forEach(side => {
       const src = document.getElementById('logo' + side);
