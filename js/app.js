@@ -58,11 +58,11 @@
       document.getElementById('scoreLeft').textContent  = pad2(state.scoreLeft);
       document.getElementById('scoreRight').textContent = pad2(state.scoreRight);
       document.getElementById('periodNum').textContent  = state.period;
-      document.getElementById('ht1Left').textContent    = state.ht1Left;
-      document.getElementById('ht1Right').textContent   = state.ht1Right;
-      document.getElementById('ht2Left').textContent    = state.ht2Left;
-      document.getElementById('ht2Right').textContent   = state.ht2Right;
-      document.getElementById('ht2Block').style.display = state.period >= 2 ? '' : 'none';
+      if (document.getElementById('ht1Left')) document.getElementById('ht1Left').textContent = state.ht1Left;
+      if (document.getElementById('ht1Right')) document.getElementById('ht1Right').textContent = state.ht1Right;
+      if (document.getElementById('ht2Left')) document.getElementById('ht2Left').textContent = state.ht2Left;
+      if (document.getElementById('ht2Right')) document.getElementById('ht2Right').textContent = state.ht2Right;
+      if (document.getElementById('ht2Block')) document.getElementById('ht2Block').style.display = state.period >= 2 ? '' : 'none';
       setArrow(state.arrow);
       renderTimer();
       renderPenalties('left');
@@ -252,14 +252,14 @@
   function saveHalftime() {
     if (state.period === 1) {
       state.ht1Left = state.scoreLeft; state.ht1Right = state.scoreRight;
-      document.getElementById('ht1Left').textContent = state.ht1Left;
-      document.getElementById('ht1Right').textContent = state.ht1Right;
+      if (document.getElementById('ht1Left')) document.getElementById('ht1Left').textContent = state.ht1Left;
+      if (document.getElementById('ht1Right')) document.getElementById('ht1Right').textContent = state.ht1Right;
       setStatus('PARCIAL 1° GUARDADO');
     } else {
       state.ht2Left = state.scoreLeft; state.ht2Right = state.scoreRight;
-      document.getElementById('ht2Left').textContent = state.ht2Left;
-      document.getElementById('ht2Right').textContent = state.ht2Right;
-      document.getElementById('ht2Block').style.display = '';
+      if (document.getElementById('ht2Left')) document.getElementById('ht2Left').textContent = state.ht2Left;
+      if (document.getElementById('ht2Right')) document.getElementById('ht2Right').textContent = state.ht2Right;
+      if (document.getElementById('ht2Block')) document.getElementById('ht2Block').style.display = '';
       setStatus('PARCIAL 2° GUARDADO');
     }
   }
@@ -570,8 +570,11 @@
     // Reset score UI
     ['scoreLeft','scoreRight'].forEach(id => document.getElementById(id).textContent = '00');
     document.getElementById('periodNum').textContent = '1';
-    ['ht1Left','ht1Right'].forEach(id => document.getElementById(id).textContent = '0');
-    document.getElementById('ht2Block').style.display = 'none';
+    ['ht1Left','ht1Right'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '0';
+    });
+    if (document.getElementById('ht2Block')) document.getElementById('ht2Block').style.display = 'none';
     document.getElementById('penaltiesLeft').innerHTML = '';
     document.getElementById('penaltiesRight').innerHTML = '';
 
@@ -821,12 +824,13 @@
       document.getElementById('scoreRight').textContent = pad2(state.scoreRight);
 
       // Período
+      // Período
       document.getElementById('periodNum').textContent  = state.period;
-      document.getElementById('ht1Left').textContent    = state.ht1Left;
-      document.getElementById('ht1Right').textContent   = state.ht1Right;
-      document.getElementById('ht2Left').textContent    = state.ht2Left;
-      document.getElementById('ht2Right').textContent   = state.ht2Right;
-      document.getElementById('ht2Block').style.display = state.period >= 2 ? '' : 'none';
+      if (document.getElementById('ht1Left')) document.getElementById('ht1Left').textContent = state.ht1Left;
+      if (document.getElementById('ht1Right')) document.getElementById('ht1Right').textContent = state.ht1Right;
+      if (document.getElementById('ht2Left')) document.getElementById('ht2Left').textContent = state.ht2Left;
+      if (document.getElementById('ht2Right')) document.getElementById('ht2Right').textContent = state.ht2Right;
+      if (document.getElementById('ht2Block')) document.getElementById('ht2Block').style.display = state.period >= 2 ? '' : 'none';
 
       // Flecha y cronómetro
       setArrow(state.arrow);
