@@ -166,10 +166,10 @@
         renderTimer();
         tickPenalties('left');
         tickPenalties('right');
-        broadcastState();
+        // broadcastState is handled by broadcastInterval every second
       } else {
         endPeriodTime();
-        broadcastState();
+        // broadcastState is handled by broadcastInterval every second
       }
     }, 1000);
   }
@@ -654,6 +654,8 @@
     if (sessionStorage.getItem('handball_admin') === 'true') {
       document.getElementById('loginOverlay').style.display = 'none';
       if (loadState()) { setStatus('PARTIDO RESTAURADO'); }
+      // Iniciar peer automáticamente al restaurar sesión
+      setTimeout(() => startAdminPeer(false), 300);
     } else {
       document.getElementById('loginPin').focus();
     }
@@ -664,6 +666,8 @@
       document.getElementById('loginOverlay').style.display = 'none';
       sessionStorage.setItem('handball_admin', 'true');
       if (loadState()) { setStatus('PARTIDO RESTAURADO'); }
+      // Iniciar peer automáticamente al hacer login
+      setTimeout(() => startAdminPeer(false), 300);
     } else {
       const err = document.getElementById('loginError');
       err.style.display = 'block';
@@ -672,57 +676,51 @@
     }
   }
 
-  /* ─────────────────────────────────────────────────────────────────
-     NETWORKING  –  PeerJS
-     Admin: crea peer con ID fijo, emite estado cada segundo.
-     Viewer: se conecta al ID fijo, sólo muestra lo que recibe.
-  ───────────────────────────────────────────────────────────────── */
+  /* ═══════════════════════════════════════════════════════════════════
+     NETWORKING — PeerJS
+     ROOM_ID fijo → mismo link siempre.
+     Admin: único Peer como host, broadcastInterval único.
+     Viewer: Peer random, se conecta al host, receptor puro.
+  ═══════════════════════════════════════════════════════════════════ */
   const ROOM_ID = 'handball-frias-live';
-  let broadcastInterval = null; // único intervalo de difusión
+  let broadcastInterval = null;
 
-  /* ── ADMIN ── */
+  /* ───── ADMIN ───── */
+
   function startAdminPeer(showModal) {
-    // Si ya está abierto, sólo actualizará el modal si se pidió
     if (peer && peer.open) {
+      // Peer ya activo — solo mostrar modal si se pidió
       if (showModal) { openModal('shareModal'); fillShareModal(); }
       return;
     }
-    // Destruir peer anterior si existe
     if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
+    clearInterval(broadcastInterval);
+    connections = [];
 
     peer = new Peer(ROOM_ID);
 
     peer.on('open', () => {
-      // Un único intervalo de broadcast – detener cualquier previo
-      clearInterval(broadcastInterval);
+      // Un solo intervalo, siempre activo mientras hay peer
       broadcastInterval = setInterval(broadcastState, 1000);
       if (showModal) { openModal('shareModal'); fillShareModal(); }
     });
 
     peer.on('connection', (conn) => {
+      connections = connections.filter(c => c.open); // limpiar viejas
       connections.push(conn);
-      // Enviar estado completo al nuevo espectador en cuanto abre
-      conn.on('open', () => broadcastState());
+      conn.on('open', () => broadcastState());        // envío inmediato al conectar
       conn.on('close', () => { connections = connections.filter(c => c !== conn); });
     });
 
     peer.on('error', (err) => {
       clearInterval(broadcastInterval);
       peer = null;
-      if (err.type === 'unavailable-id') {
-        // Otro dispositivo ya tiene este ID – reintentar en 5 s
-        if (showModal) {
-          document.getElementById('shareStatus').textContent = '⚠ Sala ocupada. Reintentando...';
-          document.getElementById('shareStatus').style.color = 'var(--led-orange)';
-        }
-        setTimeout(() => startAdminPeer(showModal), 5000);
-      } else {
-        if (showModal) {
-          document.getElementById('shareStatus').textContent = 'Error: ' + (err.message || err.type);
-          document.getElementById('shareStatus').style.color = 'var(--led-red)';
-        }
-        setTimeout(() => startAdminPeer(false), 8000); // reconectar silencioso
+      const wait = err.type === 'unavailable-id' ? 5000 : 8000;
+      if (showModal && err.type === 'unavailable-id') {
+        document.getElementById('shareStatus').textContent = '⚠ Sala ocupada. Reintentando...';
+        document.getElementById('shareStatus').style.color = 'var(--led-orange)';
       }
+      setTimeout(() => startAdminPeer(err.type === 'unavailable-id' ? showModal : false), wait);
     });
   }
 
@@ -731,18 +729,15 @@
     document.getElementById('shareStatus').textContent = '✔ EN VIVO — sala: ' + ROOM_ID;
     document.getElementById('shareStatus').style.color = '#00cc44';
     document.getElementById('shareLinkInput').value = shareUrl;
-    const qrContainer = document.getElementById('qrcode');
-    qrContainer.innerHTML = '';
-    new QRCode(qrContainer, {
-      text: shareUrl, width: 160, height: 160,
-      colorDark: '#000000', colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.L
-    });
+    const qr = document.getElementById('qrcode');
+    qr.innerHTML = '';
+    new QRCode(qr, { text: shareUrl, width: 160, height: 160,
+      colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.L });
   }
 
-  // Llamado desde el botón COMPARTIR
   function initAdminNetwork() {
     openModal('shareModal');
+    if (peer && peer.open) { fillShareModal(); return; }
     document.getElementById('shareStatus').textContent = 'Conectando al servidor...';
     document.getElementById('shareStatus').style.color = 'var(--led-orange)';
     startAdminPeer(true);
@@ -750,15 +745,25 @@
 
   function copyShareLink() {
     const input = document.getElementById('shareLinkInput');
-    input.select();
-    document.execCommand('copy');
+    input.select(); document.execCommand('copy');
     setStatus('LINK COPIADO');
   }
 
   function broadcastState() {
-    if (isViewer || connections.length === 0) return;
+    if (isViewer || !peer || !peer.open || connections.length === 0) return;
+    const s = state;
     const payload = {
-      state: JSON.parse(JSON.stringify(state)), // copia limpia sin referencias
+      timerSeconds:  s.timerSeconds,
+      timerRunning:  s.timerRunning,
+      scoreLeft:     s.scoreLeft,
+      scoreRight:    s.scoreRight,
+      period:        s.period,
+      periodMinutes: s.periodMinutes,
+      ht1Left: s.ht1Left, ht1Right: s.ht1Right,
+      ht2Left: s.ht2Left, ht2Right: s.ht2Right,
+      arrow:         s.arrow,
+      penalties:     JSON.parse(JSON.stringify(s.penalties)),
+      timeout:       JSON.parse(JSON.stringify(s.timeout)),
       tournamentName: document.getElementById('tournamentName').value,
       teamNameLeft:   document.getElementById('teamNameLeft').value,
       teamNameRight:  document.getElementById('teamNameRight').value,
@@ -767,35 +772,50 @@
       logoLeftHtml:   document.getElementById('logoLeft').innerHTML,
       logoRightHtml:  document.getElementById('logoRight').innerHTML,
     };
-    connections.forEach(conn => { if (conn.open) conn.send(payload); });
+    connections.forEach(conn => { try { if (conn.open) conn.send(payload); } catch(e){} });
   }
 
+  // Broadcast en cada acción del admin (goles, nombres, etc.)
   document.addEventListener('click', () => { if (!isViewer) { setTimeout(broadcastState, 50); setTimeout(saveState, 100); } });
   document.addEventListener('keyup',  () => { if (!isViewer) { setTimeout(broadcastState, 50); setTimeout(saveState, 100); } });
   setInterval(() => { if (!isViewer && state.timerRunning) saveState(); }, 5000);
 
-  /* ── VIEWER ── */
+  /* ───── VIEWER ───── */
+
   function initViewer(watchId) {
     let retryCount = 0;
-    const MAX_RETRIES = 10;
-    let currentConn = null;
+    const MAX_RETRIES = 20;
 
-    function applyState(data) {
-      // El espectador es receptor puro: copia el estado del admin y renderiza
-      Object.assign(state, data.state);
+    function applyData(d) {
+      // Aplicar todos los campos del estado recibido directamente
+      state.timerSeconds  = d.timerSeconds;
+      state.timerRunning  = d.timerRunning;
+      state.scoreLeft     = d.scoreLeft;
+      state.scoreRight    = d.scoreRight;
+      state.period        = d.period;
+      state.periodMinutes = d.periodMinutes;
+      state.ht1Left  = d.ht1Left;  state.ht1Right  = d.ht1Right;
+      state.ht2Left  = d.ht2Left;  state.ht2Right  = d.ht2Right;
+      state.arrow         = d.arrow;
+      state.penalties     = d.penalties;
+      state.timeout       = d.timeout;
 
-      document.getElementById('tournamentName').value  = data.tournamentName;
-      document.getElementById('teamNameLeft').value    = data.teamNameLeft;
-      document.getElementById('teamNameRight').value   = data.teamNameRight;
-      document.getElementById('teamColorLeft').value   = data.teamColorLeft;
-      document.getElementById('teamColorRight').value  = data.teamColorRight;
-      updateTeamColor('left',  data.teamColorLeft);
-      updateTeamColor('right', data.teamColorRight);
-      document.getElementById('logoLeft').innerHTML    = data.logoLeftHtml;
-      document.getElementById('logoRight').innerHTML   = data.logoRightHtml;
+      // Nombres / colores / logos
+      document.getElementById('tournamentName').value  = d.tournamentName;
+      document.getElementById('teamNameLeft').value    = d.teamNameLeft;
+      document.getElementById('teamNameRight').value   = d.teamNameRight;
+      document.getElementById('teamColorLeft').value   = d.teamColorLeft;
+      document.getElementById('teamColorRight').value  = d.teamColorRight;
+      updateTeamColor('left',  d.teamColorLeft);
+      updateTeamColor('right', d.teamColorRight);
+      document.getElementById('logoLeft').innerHTML    = d.logoLeftHtml;
+      document.getElementById('logoRight').innerHTML   = d.logoRightHtml;
 
+      // Marcador
       document.getElementById('scoreLeft').textContent  = pad2(state.scoreLeft);
       document.getElementById('scoreRight').textContent = pad2(state.scoreRight);
+
+      // Período
       document.getElementById('periodNum').textContent  = state.period;
       document.getElementById('ht1Left').textContent    = state.ht1Left;
       document.getElementById('ht1Right').textContent   = state.ht1Right;
@@ -803,47 +823,47 @@
       document.getElementById('ht2Right').textContent   = state.ht2Right;
       document.getElementById('ht2Block').style.display = state.period >= 2 ? '' : 'none';
 
+      // Flecha y cronómetro
       setArrow(state.arrow);
       renderTimer();
+
+      // Penalidades
       renderPenalties('left');
       renderPenalties('right');
 
-      // Tiempo muerto: solo actualizar display (sin btn)
+      // Tiempos muertos
       ['left', 'right'].forEach(side => {
-        const cap = side.charAt(0).toUpperCase() + side.slice(1);
+        const cap = side[0].toUpperCase() + side.slice(1);
         const el = document.getElementById('timeout' + cap);
         if (!el) return;
         const t = state.timeout[side];
-        const m = Math.floor(t.seconds / 60), s = t.seconds % 60;
-        el.textContent = pad2(m) + ':' + pad2(s);
+        const m = Math.floor(t.seconds / 60), s2 = t.seconds % 60;
+        el.textContent = pad2(m) + ':' + pad2(s2);
         el.classList.toggle('running', !!t.running);
       });
     }
 
     function connectToPeer() {
-      // Crear peer viewer con ID aleatorio
       if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
-      peer = new Peer(); // sin ID – el viewer no necesita ID fijo
+      peer = new Peer();
 
       peer.on('open', () => {
         setStatus('CONECTANDO AL OPERADOR...');
-        currentConn = peer.connect(watchId, { reliable: true, serialization: 'json' });
+        const conn = peer.connect(watchId, { reliable: true });
 
-        currentConn.on('open', () => {
+        conn.on('open', () => {
           retryCount = 0;
           setStatus('🔴 TRANSMISIÓN EN VIVO');
         });
 
-        currentConn.on('data', (data) => {
-          applyState(data);
-        });
+        conn.on('data', (d) => { applyData(d); });
 
-        currentConn.on('close', () => {
+        conn.on('close', () => {
           setStatus('SIN SEÑAL — reconectando...');
           scheduleReconnect();
         });
 
-        currentConn.on('error', () => {
+        conn.on('error', () => {
           setStatus('ERROR — reconectando...');
           scheduleReconnect();
         });
@@ -856,10 +876,7 @@
     }
 
     function scheduleReconnect() {
-      if (retryCount >= MAX_RETRIES) {
-        setStatus('SIN CONEXIÓN CON EL OPERADOR');
-        return;
-      }
+      if (retryCount >= MAX_RETRIES) { setStatus('SIN CONEXIÓN CON EL OPERADOR'); return; }
       retryCount++;
       setTimeout(connectToPeer, 3000);
     }
