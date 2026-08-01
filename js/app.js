@@ -503,15 +503,26 @@
     img.src = src;
   }
 
+  // Store small thumbnails for broadcast (to keep payload small)
+  const logoBroadcastSrc = { left: '', right: '' };
+
   function handleFileInput(file) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = e => {
-      compressImage(e.target.result, 160, 0.72, (compressed) => {
+      const original = e.target.result;
+      // High quality for local display (400px, quality 0.92)
+      compressImage(original, 400, 0.92, (hq) => {
         const prev = document.getElementById('logoPreview');
-        prev.src = compressed;
+        prev.src = hq;
         prev.classList.add('visible');
-        setTimeout(() => setLogoImage(compressed), 600);
+        // Also generate a small thumbnail just for broadcast
+        compressImage(original, 120, 0.65, (thumb) => {
+          // Store thumbnail keyed to current logo target
+          const side = state.currentLogoTarget === 'logoLeft' ? 'left' : 'right';
+          logoBroadcastSrc[side] = thumb;
+          setTimeout(() => setLogoImage(hq), 600);
+        });
       });
     };
     reader.readAsDataURL(file);
@@ -892,8 +903,20 @@
       teamNameRight:  document.getElementById('teamNameRight').value,
       teamColorLeft:  document.getElementById('teamColorLeft').value,
       teamColorRight: document.getElementById('teamColorRight').value,
-      logoLeftHtml:   document.getElementById('logoLeft').innerHTML,
-      logoRightHtml:  document.getElementById('logoRight').innerHTML,
+      logoLeftHtml:   (() => {
+        const side = 'left';
+        if (logoBroadcastSrc[side]) {
+          return `<img src="${logoBroadcastSrc[side]}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+        }
+        return document.getElementById('logoLeft').innerHTML;
+      })(),
+      logoRightHtml:  (() => {
+        const side = 'right';
+        if (logoBroadcastSrc[side]) {
+          return `<img src="${logoBroadcastSrc[side]}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+        }
+        return document.getElementById('logoRight').innerHTML;
+      })(),
     };
     realtimeChannel.send({
       type: 'broadcast',
