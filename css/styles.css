@@ -288,13 +288,13 @@
 
     .penalty-timer-display {
       font-family: var(--font-mono);
-      font-size: clamp(18px, 2.5vw, 26px);
+      font-size: clamp(26px, 3.5vw, 38px);
       font-weight: 700;
       color: var(--led-yellow); text-shadow: 0 0 8px #FFD700bb;
       background: var(--bg-panel); border: 1px solid #555;
-      border-radius: 4px; padding: 4px 10px;
+      border-radius: 4px; padding: 6px 12px;
       flex: 1; text-align: center;
-      cursor: pointer; min-width: 80px;
+      cursor: pointer; min-width: 90px;
       letter-spacing: 2px;
     }
 
