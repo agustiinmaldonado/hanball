@@ -846,6 +846,8 @@
         el.textContent = pad2(m) + ':' + pad2(s2);
         el.classList.toggle('running', !!t.running);
       });
+    } // end applyData
+
     function connectToSupabase() {
       try {
         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
