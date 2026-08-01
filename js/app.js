@@ -628,9 +628,12 @@
   /* ── Init ── */
   renderTimer();
 
-  /* ── Networking (PeerJS) ── */
-  let peer = null;
-  let connections = [];
+  /* ── Networking (Supabase Realtime) ── */
+  const SUPABASE_URL = 'https://jwdqjfvvgpjdaobkrphx.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_m1fsgAiavkgIMavKhLmUXQ_-FeIFgaN';
+  let supabase = null;
+  let realtimeChannel = null;
+
   const urlParams = new URLSearchParams(window.location.search);
   const watchId = urlParams.get('watch');
   const isViewer = !!watchId;
@@ -677,7 +680,7 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════
-     NETWORKING — PeerJS
+     NETWORKING — Supabase Realtime
      ROOM_ID fijo → mismo link siempre.
      Admin: único Peer como host, broadcastInterval único.
      Viewer: Peer random, se conecta al host, receptor puro.
@@ -688,40 +691,38 @@
   /* ───── ADMIN ───── */
 
   function startAdminPeer(showModal) {
-    if (peer && peer.open) {
-      // Peer ya activo — solo mostrar modal si se pidió
+    if (supabase && realtimeChannel) {
+      // Supabase already initialized — show modal if requested
       if (showModal) { openModal('shareModal'); fillShareModal(); }
       return;
     }
-    if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
-    clearInterval(broadcastInterval);
-    connections = [];
 
-    peer = new Peer(ROOM_ID);
+    try {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      realtimeChannel = supabase.channel(ROOM_ID, {
+        config: {
+          broadcast: { self: false }
+        }
+      });
 
-    peer.on('open', () => {
-      // Un solo intervalo, siempre activo mientras hay peer
-      broadcastInterval = setInterval(broadcastState, 1000);
-      if (showModal) { openModal('shareModal'); fillShareModal(); }
-    });
-
-    peer.on('connection', (conn) => {
-      connections = connections.filter(c => c.open); // limpiar viejas
-      connections.push(conn);
-      conn.on('open', () => broadcastState());        // envío inmediato al conectar
-      conn.on('close', () => { connections = connections.filter(c => c !== conn); });
-    });
-
-    peer.on('error', (err) => {
-      clearInterval(broadcastInterval);
-      peer = null;
-      const wait = err.type === 'unavailable-id' ? 5000 : 8000;
-      if (showModal && err.type === 'unavailable-id') {
-        document.getElementById('shareStatus').textContent = '⚠ Sala ocupada. Reintentando...';
-        document.getElementById('shareStatus').style.color = 'var(--led-orange)';
+      realtimeChannel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          // Un solo intervalo, siempre activo mientras hay canal
+          clearInterval(broadcastInterval);
+          broadcastInterval = setInterval(broadcastState, 1000);
+          if (showModal) { openModal('shareModal'); fillShareModal(); }
+        } else {
+          clearInterval(broadcastInterval);
+        }
+      });
+    } catch (e) {
+      console.error("Error al iniciar Supabase Admin:", e);
+      if (showModal) {
+        document.getElementById('shareStatus').textContent = 'Error al conectar. Reintentando...';
+        document.getElementById('shareStatus').style.color = 'var(--led-red)';
       }
-      setTimeout(() => startAdminPeer(err.type === 'unavailable-id' ? showModal : false), wait);
-    });
+      setTimeout(() => startAdminPeer(false), 5000);
+    }
   }
 
   function fillShareModal() {
@@ -737,7 +738,7 @@
 
   function initAdminNetwork() {
     openModal('shareModal');
-    if (peer && peer.open) { fillShareModal(); return; }
+    if (supabase && realtimeChannel) { fillShareModal(); return; }
     document.getElementById('shareStatus').textContent = 'Conectando al servidor...';
     document.getElementById('shareStatus').style.color = 'var(--led-orange)';
     startAdminPeer(true);
@@ -750,7 +751,7 @@
   }
 
   function broadcastState() {
-    if (isViewer || !peer || !peer.open || connections.length === 0) return;
+    if (isViewer || !supabase || !realtimeChannel) return;
     const s = state;
     const payload = {
       timerSeconds:  s.timerSeconds,
@@ -772,7 +773,11 @@
       logoLeftHtml:   document.getElementById('logoLeft').innerHTML,
       logoRightHtml:  document.getElementById('logoRight').innerHTML,
     };
-    connections.forEach(conn => { try { if (conn.open) conn.send(payload); } catch(e){} });
+    realtimeChannel.send({
+      type: 'broadcast',
+      event: 'match_state',
+      payload: payload
+    });
   }
 
   // Broadcast en cada acción del admin (goles, nombres, etc.)
@@ -841,47 +846,46 @@
         el.textContent = pad2(m) + ':' + pad2(s2);
         el.classList.toggle('running', !!t.running);
       });
-    }
-
-    function connectToPeer() {
-      if (peer) { try { peer.destroy(); } catch(e){} peer = null; }
-      peer = new Peer();
-
-      peer.on('open', () => {
-        setStatus('CONECTANDO AL OPERADOR...');
-        const conn = peer.connect(watchId, { reliable: true });
-
-        conn.on('open', () => {
-          retryCount = 0;
-          setStatus('🔴 TRANSMISIÓN EN VIVO');
+    function connectToSupabase() {
+      try {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        realtimeChannel = supabase.channel(watchId, {
+          config: {
+            broadcast: { ack: false }
+          }
         });
 
-        conn.on('data', (d) => { applyData(d); });
-
-        conn.on('close', () => {
-          setStatus('SIN SEÑAL — reconectando...');
-          scheduleReconnect();
-        });
-
-        conn.on('error', () => {
-          setStatus('ERROR — reconectando...');
-          scheduleReconnect();
-        });
-      });
-
-      peer.on('error', () => {
+        realtimeChannel
+          .on('broadcast', { event: 'match_state' }, (payload) => {
+            retryCount = 0;
+            setStatus('🔴 TRANSMISIÓN EN VIVO');
+            applyData(payload.payload);
+          })
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              setStatus('🔴 CONECTADO - ESPERANDO DATOS');
+            } else if (status === 'CLOSED') {
+              setStatus('SIN SEÑAL — reconectando...');
+              scheduleReconnect();
+            } else if (status === 'CHANNEL_ERROR') {
+              setStatus('ERROR DE CONEXIÓN — reintentando...');
+              scheduleReconnect();
+            }
+          });
+      } catch (e) {
+        console.error("Error al conectar espectador a Supabase:", e);
         setStatus('ERROR DE RED — reintentando...');
         scheduleReconnect();
-      });
+      }
     }
 
     function scheduleReconnect() {
       if (retryCount >= MAX_RETRIES) { setStatus('SIN CONEXIÓN CON EL OPERADOR'); return; }
       retryCount++;
-      setTimeout(connectToPeer, 3000);
+      setTimeout(connectToSupabase, 3000);
     }
 
-    connectToPeer();
+    connectToSupabase();
   }
 
   /* ── Result Generator ── */
