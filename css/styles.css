@@ -7,16 +7,16 @@
 }
 
 :root {
-  --led-yellow: #FFD700;
+  --led-yellow: #F8F8F8;
   --led-orange: #FFA500;
   --led-red: #FF4444;
   --bg-dark: #0a0a0a;
   --bg-panel: #111;
   --bg-inner: #080808;
-  --shadow-led: 0 0 8px #FFD700, 0 0 20px #FFD70066;
+  --shadow-led: 0 0 8px #F8F8F8, 0 0 20px #F8F8F866;
   --shadow-red: 0 0 8px #FF4444, 0 0 20px #FF444466;
-  --team-color-left: #FFD700;
-  --team-color-right: #FFD700;
+  --team-color-left: #F8F8F8;
+  --team-color-right: #F8F8F8;
   --font-led: 'Orbitron', monospace;
   --font-mono: 'Share Tech Mono', monospace;
 }
@@ -193,7 +193,7 @@ body {
   height: 26px;
   border-radius: 50%;
   border: 2px solid var(--led-yellow);
-  box-shadow: 0 0 6px var(--team-color-left, #FFD700);
+  box-shadow: 0 0 6px var(--team-color-left, #F8F8F8);
   background: var(--led-yellow);
   cursor: pointer;
   padding: 0;
@@ -219,7 +219,7 @@ body {
   flex-direction: column;
   align-items: center;
   min-width: 130px;
-  box-shadow: 0 6px 24px #FFD70044;
+  box-shadow: 0 6px 24px #F8F8F844;
 }
 
 #colorPopoverRight {
@@ -301,7 +301,7 @@ body {
   cursor: pointer;
   transition: all 0.1s;
   text-shadow: var(--shadow-led);
-  box-shadow: 0 0 4px #FFD70033;
+  box-shadow: 0 0 4px #F8F8F833;
 }
 
 .btn:hover {
@@ -392,7 +392,7 @@ body {
   font-size: clamp(26px, 3.5vw, 38px);
   font-weight: 700;
   color: var(--led-yellow);
-  text-shadow: 0 0 8px #FFD700bb;
+  text-shadow: 0 0 8px #F8F8F8bb;
   width: 64px;
   text-align: center;
   background: var(--bg-panel);
@@ -408,7 +408,7 @@ body {
   font-size: clamp(26px, 3.5vw, 38px);
   font-weight: 700;
   color: var(--led-yellow);
-  text-shadow: 0 0 8px #FFD700bb;
+  text-shadow: 0 0 8px #F8F8F8bb;
   background: var(--bg-panel);
   border: 1px solid #555;
   border-radius: 4px;
@@ -579,7 +579,7 @@ body {
   font-size: 8px;
   letter-spacing: 2px;
   color: var(--led-yellow);
-  text-shadow: 0 0 4px #FFD70088;
+  text-shadow: 0 0 4px #F8F8F888;
   text-align: center;
   margin-bottom: 3px;
 }
@@ -616,7 +616,7 @@ body {
   font-size: 8px;
   letter-spacing: 3px;
   color: var(--led-yellow);
-  text-shadow: 0 0 4px #FFD70088;
+  text-shadow: 0 0 4px #F8F8F888;
   margin-bottom: 2px;
 }
 
@@ -673,7 +673,7 @@ body {
   border: 2px solid var(--led-yellow);
   border-radius: 8px;
   padding: 24px;
-  box-shadow: 0 0 30px #FFD70066;
+  box-shadow: 0 0 30px #F8F8F866;
   min-width: 280px;
   display: flex;
   flex-direction: column;
@@ -757,7 +757,7 @@ body {
   font-size: 10px;
   letter-spacing: 1px;
   text-shadow: var(--shadow-led);
-  box-shadow: 0 0 6px #FFD70022;
+  box-shadow: 0 0 6px #F8F8F822;
 }
 
 .logo-pick-btn:hover {
@@ -824,14 +824,14 @@ body {
   font-size: 13px;
   letter-spacing: 1px;
   color: var(--led-yellow);
-  text-shadow: 0 0 6px #FFD70066;
+  text-shadow: 0 0 6px #F8F8F866;
   text-align: center;
   line-height: 1.6;
 }
 
 .confirm-divider {
   height: 1px;
-  background: linear-gradient(to right, transparent, #FFD70044, #FFD700, #FFD70044, transparent);
+  background: linear-gradient(to right, transparent, #F8F8F844, #F8F8F8, #F8F8F844, transparent);
   margin: 2px 0;
 }
 

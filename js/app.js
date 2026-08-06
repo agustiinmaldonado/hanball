@@ -24,8 +24,8 @@ function saveState() {
       tournamentName: document.getElementById('tournamentName')?.value || '',
       teamNameLeft: document.getElementById('teamNameLeft')?.value || '',
       teamNameRight: document.getElementById('teamNameRight')?.value || '',
-      teamColorLeft: document.getElementById('teamColorLeft')?.value || '#FFD700',
-      teamColorRight: document.getElementById('teamColorRight')?.value || '#FFD700',
+      teamColorLeft: document.getElementById('teamColorLeft')?.value || '#F8F8F8',
+      teamColorRight: document.getElementById('teamColorRight')?.value || '#F8F8F8',
       logoLeftHtml: document.getElementById('logoLeft')?.innerHTML || '',
       logoRightHtml: document.getElementById('logoRight')?.innerHTML || '',
     };
@@ -119,7 +119,7 @@ function updateTeamColor(side, color) {
 }
 
 function resetTeamColor(side) {
-  const defaultColor = '#FFD700';
+  const defaultColor = '#F8F8F8';
   const cap = side.charAt(0).toUpperCase() + side.slice(1);
   const inputEl = document.getElementById('teamColor' + cap);
   if (inputEl) inputEl.value = defaultColor;
@@ -396,7 +396,7 @@ function handleLogoClick(targetId) {
     // Get the corresponding team name
     const teamNameId = targetId === 'logoLeft' ? 'teamNameLeft' : 'teamNameRight';
     const teamName = document.getElementById(teamNameId).value || (targetId === 'logoLeft' ? 'LOCAL' : 'VISITANTE');
-    const teamColor = document.getElementById(targetId === 'logoLeft' ? 'teamColorLeft' : 'teamColorRight')?.value || '#FFD700';
+    const teamColor = document.getElementById(targetId === 'logoLeft' ? 'teamColorLeft' : 'teamColorRight')?.value || '#F8F8F8';
 
     const titleEl = document.getElementById('viewerTeamName');
     titleEl.textContent = teamName;

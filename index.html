@@ -45,7 +45,7 @@
         <div class="color-picker-wrap" id="colorWrapLeft">
           <button class="team-color-btn" id="colorBtnLeft" onclick="toggleColorPicker('left')" title="Color del equipo"></button>
           <div class="color-picker-popover" id="colorPopoverLeft">
-            <input type="color" id="teamColorLeft" value="#FFD700" onchange="updateTeamColor('left', this.value)" />
+            <input type="color" id="teamColorLeft" value="#F8F8F8" onchange="updateTeamColor('left', this.value)" />
             <button class="btn btn-sm" style="font-size:10px; width:100%;" onclick="resetTeamColor('left')">&#8635; RESTABLECER</button>
           </div>
         </div>
@@ -117,7 +117,7 @@
         <div class="color-picker-wrap" id="colorWrapRight">
           <button class="team-color-btn" id="colorBtnRight" onclick="toggleColorPicker('right')" title="Color del equipo"></button>
           <div class="color-picker-popover" id="colorPopoverRight">
-            <input type="color" id="teamColorRight" value="#FFD700" onchange="updateTeamColor('right', this.value)" />
+            <input type="color" id="teamColorRight" value="#F8F8F8" onchange="updateTeamColor('right', this.value)" />
             <button class="btn btn-sm" style="font-size:10px; width:100%;" onclick="resetTeamColor('right')">&#8635; RESTABLECER</button>
           </div>
         </div>
@@ -174,8 +174,8 @@
     <div id="resultCapture" style="background:linear-gradient(160deg,#0d0d1a 0%,#0a0a0c 55%,#0d0900 100%); border:2px solid var(--led-yellow); border-radius:12px; overflow:hidden; width:100%;">
 
       <!-- Card Header -->
-      <div style="background:linear-gradient(90deg,#1a1000,#251600,#1a1000); padding:12px 20px; border-bottom:1px solid #FFD70033; text-align:center;">
-        <div id="rcTournament" style="font-family:var(--font-led); font-size:13px; letter-spacing:4px; color:var(--led-yellow); text-shadow:0 0 10px #FFD70088;"></div>
+      <div style="background:linear-gradient(90deg,#1a1000,#251600,#1a1000); padding:12px 20px; border-bottom:1px solid #F8F8F833; text-align:center;">
+        <div id="rcTournament" style="font-family:var(--font-led); font-size:13px; letter-spacing:4px; color:var(--led-yellow); text-shadow:0 0 10px #F8F8F888;"></div>
       </div>
 
       <!-- Teams & Score -->
@@ -190,9 +190,9 @@
         <!-- SCORE -->
         <div style="display:flex; flex-direction:column; align-items:center; gap:4px; flex:0 0 auto; padding:0 4px;">
           <div style="display:flex; gap:6px; align-items:center;">
-            <div id="rcScoreLeft" style="font-family:var(--font-led); font-size:72px; color:var(--led-yellow); text-shadow:0 0 18px #FFD700aa; line-height:1;"></div>
+            <div id="rcScoreLeft" style="font-family:var(--font-led); font-size:72px; color:var(--led-yellow); text-shadow:0 0 18px #F8F8F8aa; line-height:1;"></div>
             <div style="font-family:var(--font-led); font-size:36px; color:#444; line-height:1;">-</div>
-            <div id="rcScoreRight" style="font-family:var(--font-led); font-size:72px; color:var(--led-yellow); text-shadow:0 0 18px #FFD700aa; line-height:1;"></div>
+            <div id="rcScoreRight" style="font-family:var(--font-led); font-size:72px; color:var(--led-yellow); text-shadow:0 0 18px #F8F8F8aa; line-height:1;"></div>
           </div>
 
         </div>
@@ -206,7 +206,7 @@
       </div>
 
       <!-- Card Footer -->
-      <div style="background:#080806; padding:8px 16px; border-top:1px solid #FFD70022; display:flex; justify-content:flex-end; align-items:center;">
+      <div style="background:#080806; padding:8px 16px; border-top:1px solid #F8F8F822; display:flex; justify-content:flex-end; align-items:center;">
         <div style="font-family:var(--font-led); font-size:8px; color:#2a2a2a; letter-spacing:2px;">HANDBALL SCOREBOARD</div>
       </div>
 
@@ -241,8 +241,8 @@
     overflow:hidden; width:95%; max-width:900px; box-shadow: 0 0 50px rgba(0,0,0,0.8);
   ">
     <!-- Header -->
-    <div style="background:linear-gradient(90deg,#1a1000,#251600,#1a1000); padding:20px 30px; border-bottom:1px solid #FFD70033; text-align:center;">
-      <div id="rsTournament" style="font-family:var(--font-led); font-size:clamp(15px, 2.5vw, 28px); letter-spacing:4px; color:var(--led-yellow); text-shadow:0 0 12px #FFD70099;"></div>
+    <div style="background:linear-gradient(90deg,#1a1000,#251600,#1a1000); padding:20px 30px; border-bottom:1px solid #F8F8F833; text-align:center;">
+      <div id="rsTournament" style="font-family:var(--font-led); font-size:clamp(15px, 2.5vw, 28px); letter-spacing:4px; color:var(--led-yellow); text-shadow:0 0 12px #F8F8F899;"></div>
     </div>
     <!-- Teams & Score -->
     <div style="display:flex; align-items:center; padding:clamp(28px, 4vw, 50px) 16px; gap:8px;">
@@ -254,9 +254,9 @@
       <!-- Score -->
       <div style="display:flex; flex-direction:column; align-items:center; gap:8px; flex:0 0 auto; padding:0 6px;">
         <div style="display:flex; gap: clamp(8px, 1.5vw, 20px); align-items:center;">
-          <div id="rsScoreLeft" style="font-family:var(--font-led); font-size:clamp(72px, 12vw, 160px); color:var(--led-yellow); text-shadow:0 0 24px #FFD700bb; line-height:1;"></div>
+          <div id="rsScoreLeft" style="font-family:var(--font-led); font-size:clamp(72px, 12vw, 160px); color:var(--led-yellow); text-shadow:0 0 24px #F8F8F8bb; line-height:1;"></div>
           <div style="font-family:var(--font-led); font-size:clamp(48px, 8vw, 100px); color:#333; line-height:1;">-</div>
-          <div id="rsScoreRight" style="font-family:var(--font-led); font-size:clamp(72px, 12vw, 160px); color:var(--led-yellow); text-shadow:0 0 24px #FFD700bb; line-height:1;"></div>
+          <div id="rsScoreRight" style="font-family:var(--font-led); font-size:clamp(72px, 12vw, 160px); color:var(--led-yellow); text-shadow:0 0 24px #F8F8F8bb; line-height:1;"></div>
         </div>
 
       </div>
@@ -267,7 +267,7 @@
       </div>
     </div>
     <!-- Footer -->
-    <div style="background:#080806; padding:12px 24px; border-top:1px solid #FFD70022; display:flex; justify-content:flex-end; align-items:center;">
+    <div style="background:#080806; padding:12px 24px; border-top:1px solid #F8F8F822; display:flex; justify-content:flex-end; align-items:center;">
       <div style="font-family:var(--font-led); font-size:clamp(9px, 1.2vw, 14px); color:#2a2a2a; letter-spacing:2px;">HANDBALL SCOREBOARD</div>
     </div>
   </div>
@@ -357,7 +357,7 @@
     <video id="webcamVideo" autoplay playsinline style="
       width:100%; max-height:300px; border-radius:10px;
       border:2px solid var(--led-yellow);
-      box-shadow:0 0 20px #FFD70055;
+      box-shadow:0 0 20px #F8F8F855;
       background:#000;
       object-fit:cover;
     "></video>
@@ -371,8 +371,8 @@
 <!-- Modal: Logo Viewer -->
 <div class="modal-overlay" id="viewerModal" onclick="if(event.target===this) closeModal('viewerModal')">
   <div class="modal" style="max-width:90vw; background:transparent; border:none; box-shadow:none; align-items:center;">
-    <div id="viewerTeamName" style="font-family:var(--font-led); font-size:clamp(16px, 4vw, 32px); color:var(--led-yellow); margin-bottom:12px; letter-spacing:2px; text-align:center; text-shadow:0 0 10px #FFD70088; width:100%; word-break:break-word;"></div>
-    <img id="viewerImage" src="" style="max-width:100%; max-height:70vh; border-radius:12px; border:2px solid var(--led-yellow); box-shadow:0 0 30px #FFD70088; object-fit:contain;" />
+    <div id="viewerTeamName" style="font-family:var(--font-led); font-size:clamp(16px, 4vw, 32px); color:var(--led-yellow); margin-bottom:12px; letter-spacing:2px; text-align:center; text-shadow:0 0 10px #F8F8F888; width:100%; word-break:break-word;"></div>
+    <img id="viewerImage" src="" style="max-width:100%; max-height:70vh; border-radius:12px; border:2px solid var(--led-yellow); box-shadow:0 0 30px #F8F8F888; object-fit:contain;" />
     <div class="modal-actions" style="margin-top:10px; width:100%;">
       <button class="btn btn-main btn-green" onclick="openLogoPickerFromViewer()" style="flex:1;">CAMBIAR LOGO</button>
       <button class="btn btn-main btn-orange" onclick="removeLogo()" style="flex:1;">QUITAR LOGO</button>
