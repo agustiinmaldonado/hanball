@@ -1251,7 +1251,65 @@ function openImageInNewTab(dataUrl) {
   w.document.close();
 }
 
+/* ── Rest Timer (Descanso 5 min) ── */
+const REST_TOTAL = 5 * 60; // 300 segundos
+let restSeconds = REST_TOTAL;
+let restRunning = false;
+let restInterval = null;
+
+function toggleRestTimer() {
+  restRunning ? pauseRestTimer() : startRestTimer();
+}
+
+function startRestTimer() {
+  if (restSeconds <= 0) return;
+  restRunning = true;
+  const btn = document.getElementById('btnRestStart');
+  btn.textContent = '⏸';
+  btn.classList.add('btn-red'); btn.classList.remove('btn-orange');
+  restInterval = setInterval(() => {
+    if (restSeconds > 0) {
+      restSeconds--;
+      renderRestTimer();
+    } else {
+      restSeconds = 0;
+      restRunning = false;
+      clearInterval(restInterval); restInterval = null;
+      renderRestTimer();
+      playPenaltyAlert('center');
+      const el = document.getElementById('restTimer');
+      if (el) { el.classList.add('warning'); setTimeout(() => el.classList.remove('warning'), 6000); }
+      const btn2 = document.getElementById('btnRestStart');
+      if (btn2) { btn2.textContent = '▶'; btn2.classList.remove('btn-red'); btn2.classList.add('btn-orange'); }
+    }
+  }, 1000);
+}
+
+function pauseRestTimer() {
+  restRunning = false;
+  clearInterval(restInterval); restInterval = null;
+  const btn = document.getElementById('btnRestStart');
+  btn.textContent = '▶';
+  btn.classList.remove('btn-red'); btn.classList.add('btn-orange');
+}
+
+function resetRestTimer() {
+  pauseRestTimer();
+  restSeconds = REST_TOTAL;
+  renderRestTimer();
+  const el = document.getElementById('restTimer');
+  if (el) el.classList.remove('warning');
+}
+
+function renderRestTimer() {
+  const m = Math.floor(restSeconds / 60);
+  const s = restSeconds % 60;
+  const el = document.getElementById('restTimer');
+  if (el) el.textContent = `${pad2(m)}:${pad2(s)}`;
+}
+
 /* ── Timeout (Tiempo Muerto) ── */
+
 const timeoutIntervals = { left: null, right: null };
 
 function toggleTimeout(side) {
